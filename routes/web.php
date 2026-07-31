@@ -43,6 +43,7 @@ Route::middleware('auth')->group(function () {
     // Kitchen Dashboard Routes
     Route::get('/kitchen', [KitchenController::class, 'index'])->name('kitchen.index');
     Route::patch('/kitchen/orders/{id}/status', [KitchenController::class, 'updateStatus'])->name('kitchen.updateStatus');
+    Route::post('/kitchen/ingredient/{ingredient}/toggle', [KitchenController::class, 'toggleStock'])->name('kitchen.toggleStock');
 
     // Campus Delivery Routes
     Route::get('/delivery', [DeliveryController::class, 'index'])->name('delivery.index');
