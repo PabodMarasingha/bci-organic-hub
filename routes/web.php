@@ -26,6 +26,10 @@ Route::middleware('auth')->group(function () {
         return view('build', ['product' => $product]);
     })->name('build');
 
+    // Cart Routes
+    Route::get('/cart', [OrderController::class, 'cart'])->name('cart');
+    Route::post('/cart/remove/{index}', [OrderController::class, 'removeFromCart'])->name('cart.remove');
+
     Route::get('/orders/create', [OrderController::class, 'create'])->name('orders.create');
     // Default Profile Routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
