@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\KitchenController;
 use App\Http\Controllers\DeliveryController;
+use App\Models\ProductItem;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -15,6 +16,15 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+
+    // Product Builder Routes
+    Route::get('/menu', function () {
+        return view('menu', ['products' => ProductItem::all()]);
+    })->name('menu');
+
+    Route::get('/build/{product}', function (ProductItem $product) {
+        return view('build', ['product' => $product]);
+    })->name('build');
 
     Route::get('/orders/create', [OrderController::class, 'create'])->name('orders.create');
     // Default Profile Routes
