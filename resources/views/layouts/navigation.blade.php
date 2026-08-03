@@ -15,6 +15,39 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+
+                    @if (auth()->user()->hasRole('customer'))
+                        <x-nav-link :href="route('menu')" :active="request()->routeIs('menu') || request()->routeIs('build')">
+                            {{ __('Menu') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('cart')" :active="request()->routeIs('cart')">
+                            {{ __('Cart') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.index') || request()->routeIs('orders.show')">
+                            {{ __('My Orders') }}
+                        </x-nav-link>
+                    @endif
+
+                    @if (auth()->user()->hasRole('kitchen'))
+                        <x-nav-link :href="route('kitchen.index')" :active="request()->routeIs('kitchen.index')">
+                            {{ __('Kitchen') }}
+                        </x-nav-link>
+                    @endif
+
+                    @if (auth()->user()->hasRole('delivery'))
+                        <x-nav-link :href="route('delivery.index')" :active="request()->routeIs('delivery.index')">
+                            {{ __('Delivery') }}
+                        </x-nav-link>
+                    @endif
+
+                    @if (auth()->user()->hasRole('admin'))
+                        <x-nav-link :href="route('admin.orders')" :active="request()->routeIs('admin.orders')">
+                            {{ __('Orders') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('admin.ingredients')" :active="request()->routeIs('admin.ingredients')">
+                            {{ __('Ingredients') }}
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -70,6 +103,39 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+
+            @if (auth()->user()->hasRole('customer'))
+                <x-responsive-nav-link :href="route('menu')" :active="request()->routeIs('menu') || request()->routeIs('build')">
+                    {{ __('Menu') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('cart')" :active="request()->routeIs('cart')">
+                    {{ __('Cart') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.index') || request()->routeIs('orders.show')">
+                    {{ __('My Orders') }}
+                </x-responsive-nav-link>
+            @endif
+
+            @if (auth()->user()->hasRole('kitchen'))
+                <x-responsive-nav-link :href="route('kitchen.index')" :active="request()->routeIs('kitchen.index')">
+                    {{ __('Kitchen') }}
+                </x-responsive-nav-link>
+            @endif
+
+            @if (auth()->user()->hasRole('delivery'))
+                <x-responsive-nav-link :href="route('delivery.index')" :active="request()->routeIs('delivery.index')">
+                    {{ __('Delivery') }}
+                </x-responsive-nav-link>
+            @endif
+
+            @if (auth()->user()->hasRole('admin'))
+                <x-responsive-nav-link :href="route('admin.orders')" :active="request()->routeIs('admin.orders')">
+                    {{ __('Orders') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.ingredients')" :active="request()->routeIs('admin.ingredients')">
+                    {{ __('Ingredients') }}
+                </x-responsive-nav-link>
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->

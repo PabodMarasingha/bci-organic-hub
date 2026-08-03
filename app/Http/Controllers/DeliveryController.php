@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Delivery;
 use Illuminate\Http\Request;
 
@@ -10,17 +9,17 @@ class DeliveryController extends Controller
 {
     public function index()
     {
-        $deliveries = Delivery::with(['customerOrder.user'])
-            ->whereIn('delivery_status', ['assigned', 'picked_up'])
+        $deliveries = Delivery::with(['order.user', 'order.deliveryZone'])
+            ->whereIn('delivery_status', ['unassigned', 'picked_up'])
             ->get();
 
-        return response()->json($deliveries);
+        return view('delivery.index', compact('deliveries'));
     }
 
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'delivery_status' => 'required|in:assigned,picked_up,delivered',
+            'delivery_status' => 'required|in:unassigned,picked_up,delivered',
         ]);
 
         $delivery = Delivery::findOrFail($id);
@@ -29,6 +28,13 @@ class DeliveryController extends Controller
             'delivered_at' => $request->delivery_status === 'delivered' ? now() : null,
         ]);
 
-        return response()->json(['message' => 'Delivery status updated', 'delivery' => $delivery]);
+        // Keep the parent order's status in sync
+        if ($request->delivery_status === 'picked_up') {
+            $delivery->order->update(['status' => 'out_for_delivery']);
+        } elseif ($request->delivery_status === 'delivered') {
+            $delivery->order->update(['status' => 'delivered']);
+        }
+
+        return back()->with('message', 'Delivery status updated.');
     }
 }

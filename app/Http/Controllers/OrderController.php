@@ -2,82 +2,108 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\CustomerOrder;
-use App\Models\OrderItem;
-use App\Models\Payment;
-use App\Models\Delivery;
+use App\Models\DeliveryZone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 
 class OrderController extends Controller
 {
+    public function cart()
+    {
+        return view('cart', ['cart' => Session::get('cart', [])]);
+    }
+
+    public function removeFromCart($index)
+    {
+        $cart = Session::get('cart', []);
+        unset($cart[$index]);
+        Session::put('cart', array_values($cart));
+        return back();
+    }
+
     public function create()
     {
-        return view('orders.create');
+        return view('orders.create', [
+            'cart' => Session::get('cart', []),
+            'zones' => DeliveryZone::all(),
+        ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'items' => 'required|array',
-            'items.*.item_name' => 'required|string',
-            'items.*.customizations' => 'nullable|array',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.unit_price' => 'required|numeric',
-            'total_amount' => 'required|numeric',
-            'delivery_zone' => 'required|string',
+            'delivery_zone_id' => 'required|exists:delivery_zones,id',
             'dropoff_location' => 'required|string',
             'payment_method' => 'required|string',
             'special_instructions' => 'nullable|string',
         ]);
 
-        return DB::transaction(function () use ($validated, $request) {
-    // 1. Create Main Order (removed 'delivery_zone' from here)
-    $order = CustomerOrder::create([
-        'user_id' => $request->user()->id,
-        'total_amount' => $validated['total_amount'],
-        'status' => 'pending',
-        'special_instructions' => $validated['special_instructions'] ?? null,
-    ]);
+        $cart = Session::get('cart', []);
 
-    // 2. Create Order Items
-    foreach ($request->items as $item) {
-        $order->items()->create([
-            'item_name' => $item['item_name'],
-            'customizations' => json_encode($item['customizations'] ?? []),
-            'quantity' => $item['quantity'],
-            'unit_price' => $item['unit_price'],
-        ]);
-    }
+        if (empty($cart)) {
+            return back()->withErrors(['cart' => 'Your cart is empty.']);
+        }
 
-    // 3. Create Payment Record
-    $order->payment()->create([
-        'payment_method' => $validated['payment_method'],
-        'amount' => $validated['total_amount'],
-        'status' => 'pending',
-    ]);
+        $totalAmount = collect($cart)->sum(function ($item) {
+            return $item['unit_price'] * $item['quantity'];
+        });
 
-    // 4. Create Delivery Record (delivery_zone goes HERE)
-    $order->delivery()->create([
-        'delivery_zone' => $validated['delivery_zone'],
-        'dropoff_location' => $validated['dropoff_location'],
-        'status' => 'pending',
-    ]);
+        $order = DB::transaction(function () use ($validated, $cart, $totalAmount, $request) {
+            $order = CustomerOrder::create([
+                'user_id' => $request->user()->id,
+                'delivery_zone_id' => $validated['delivery_zone_id'],
+                'total_amount' => $totalAmount,
+                'status' => 'pending',
+                'special_instructions' => $validated['special_instructions'] ?? null,
+            ]);
 
-    return response()->json([
-        'message' => 'Order placed successfully!',
-        'order_id' => $order->id
-    ], 201);
-});
+            foreach ($cart as $item) {
+                $order->items()->create([
+                    'item_name' => $item['item_name'],
+                    'customizations' => $item['customizations'] ?? [],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                ]);
+            }
+
+            $order->payment()->create([
+                'payment_method' => $validated['payment_method'],
+                'amount' => $totalAmount,
+                'payment_status' => 'pending',
+            ]);
+
+            $order->delivery()->create([
+                'dropoff_location' => $validated['dropoff_location'],
+                'delivery_status' => 'unassigned',
+            ]);
+
+            return $order;
+        });
+
+        Session::forget('cart');
+
+        return redirect()->route('orders.show', $order->id)
+            ->with('message', 'Order placed successfully!');
     }
 
     public function show(Request $request, $id)
     {
-        $order = CustomerOrder::with(['orderItems', 'payment', 'delivery'])
+        $order = CustomerOrder::with(['items', 'payment', 'delivery', 'deliveryZone'])
             ->where('user_id', $request->user()->id)
             ->findOrFail($id);
 
-        return response()->json($order);
+        return view('orders.show', ['order' => $order]);
     }
+
+    public function myOrders(Request $request)
+{
+    $orders = CustomerOrder::with(['items', 'deliveryZone'])
+        ->where('user_id', $request->user()->id)
+        ->latest()
+        ->get();
+
+    return view('orders.index', compact('orders'));
+}
 }
