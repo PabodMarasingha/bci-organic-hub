@@ -30,6 +30,7 @@ class LoginRequest extends FormRequest
         return [
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
+            'role' => ['sometimes', 'string', 'in:customer,kitchen,delivery,admin'], // Role validation එක
         ];
     }
 
@@ -42,11 +43,26 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
+        // 1. Email සහ Password නිවැරදිදැයි පරීක්ෂා කිරීම
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
+            ]);
+        }
+
+        // 2. Select කරපු Role එක Database එකේ User ගේ Role එකට සමානදැයි Check කිරීම
+        $user = Auth::user();
+        
+        if ($this->has('role') && $user->role !== $this->input('role')) {
+            // Role එක ගැලපෙන්නේ නැත්නම් Session එකෙන් Logout කර සූදානම් වන්න
+            Auth::logout();
+            
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => 'This account is not authorized to log in as a ' . ucfirst($this->input('role')) . '.',
             ]);
         }
 
