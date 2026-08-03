@@ -9,7 +9,7 @@ use App\Http\Controllers\Admin\IngredientController;
 use App\Http\Controllers\Admin\OrderOverviewController;
 use App\Models\ProductItem;
 
-// Home Page
+// Home Page - Redirect to Login
 Route::get('/', function () {
     return redirect()->route('login');
 });
@@ -30,20 +30,24 @@ Route::middleware('auth')->group(function () {
             return view('dashboard');
         })->name('dashboard');
 
-        Route::get('/menu', function () {
-            return view('menu', ['products' => ProductItem::all()]);
-        })->name('menu');
+        // Dynamic Menu Route (handled via OrderController)
+        Route::get('/menu', [OrderController::class, 'menu'])->name('menu');
 
+        // Product Customization Route
         Route::get('/build/{product}', function (ProductItem $product) {
-            return view('build', ['product' => $product]);
+            return view('build', ['product' => $product->load('ingredients')]);
         })->name('build');
 
-        // Cart & Order Routes
+        // Cart Management Routes
         Route::get('/cart', [OrderController::class, 'cart'])->name('cart');
+        Route::post('/cart/add', [OrderController::class, 'addToCart'])->name('cart.add');
         Route::post('/cart/remove/{index}', [OrderController::class, 'removeFromCart'])->name('cart.remove');
+
+        // Order Placement & History Routes
         Route::get('/orders/create', [OrderController::class, 'create'])->name('orders.create');
         Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
         Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
+        Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
         Route::get('/my-orders', [OrderController::class, 'myOrders'])->name('orders.index');
     });
 

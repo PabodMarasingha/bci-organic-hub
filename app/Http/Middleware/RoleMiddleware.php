@@ -9,16 +9,21 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    public function handle(Request $request, Closure $next, ...$roles): Response
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     */
+    public function handle(Request $request, Closure $next, string ...$roles): Response
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect('/login');
         }
 
         $user = Auth::user();
 
-        // User ගේ role එක අදාළ allowed roles අතර නැත්නම් 403 (Unauthorized) error එකක් දෙන්න
-        if (!in_array($user->role, $roles)) {
+        // Abort with 403 if user role is not within allowed roles
+        if (! in_array($user->role, $roles)) {
             abort(403, 'Unauthorized access.');
         }
 

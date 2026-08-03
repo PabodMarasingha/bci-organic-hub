@@ -12,12 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('product_items', function (Blueprint $table) {
-    $table->id();
-    $table->string('name');
-    $table->enum('category', ['salad', 'juice', 'snack']);
-    $table->decimal('base_price', 8, 2);
-    $table->timestamps();
-});
+            $table->id();
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->decimal('price', 8, 2);
+            $table->string('image')->nullable();
+            $table->string('category')->default('general'); // dynamic categories සඳහා string භාවිතය පහසුයි
+            $table->boolean('is_available')->default(true); // <-- QueryException එක විසඳන column එක
+            $table->timestamps();
+        });
     }
 
     /**

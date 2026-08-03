@@ -30,6 +30,9 @@
 
         <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-slate-100 animate-fade-in">
             
+            <!-- Session Status Alert -->
+            <x-auth-session-status class="mb-4" :status="session('status')" />
+
             <form method="POST" action="{{ route('login') }}" id="loginForm">
                 @csrf
 
@@ -38,7 +41,7 @@
                     <label class="block text-xs font-semibold uppercase text-slate-400 mb-3 tracking-wider">
                         Select Role
                     </label>
-                    <input type="hidden" name="role" id="selected_role" value="customer">
+                    <input type="hidden" name="role" id="selected_role" value="{{ old('role', 'customer') }}">
 
                     <div class="grid grid-cols-2 gap-3">
                         <!-- Customer Role Card -->
@@ -74,7 +77,7 @@
                 <!-- 2. Email Address Input -->
                 <div class="mb-4">
                     <label for="email" class="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
-                    <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus 
+                    <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username"
                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition duration-200">
                     <x-input-error :messages="$errors->get('email')" class="mt-1" />
                 </div>
@@ -82,14 +85,14 @@
                 <!-- 3. Password Input -->
                 <div class="mb-4">
                     <label for="password" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                    <input id="password" type="password" name="password" required 
+                    <input id="password" type="password" name="password" required autocomplete="current-password"
                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition duration-200">
                     <x-input-error :messages="$errors->get('password')" class="mt-1" />
                 </div>
 
                 <!-- Remember Me & Forgot Password -->
                 <div class="flex items-center justify-between mb-6">
-                    <label class="inline-flex items-center text-sm text-slate-600">
+                    <label class="inline-flex items-center text-sm text-slate-600 cursor-pointer">
                         <input type="checkbox" name="remember" class="rounded border-slate-300 text-green-600 focus:ring-green-500">
                         <span class="ml-2">Remember me</span>
                     </label>
@@ -121,22 +124,27 @@
         </div>
     </div>
 
-    <!-- JavaScript for Role Toggle -->
+    <!-- JavaScript for Dynamic Role Toggle -->
     <script>
         function selectRole(role) {
-            // Set hidden input value
             document.getElementById('selected_role').value = role;
 
-            // Reset all buttons
             document.querySelectorAll('.role-btn').forEach(btn => {
                 btn.classList.remove('role-card-active');
                 btn.classList.add('text-slate-600');
             });
 
-            // Activate current button
             const activeBtn = document.getElementById('role-btn-' + role);
-            activeBtn.classList.add('role-card-active');
-            activeBtn.classList.remove('text-slate-600');
+            if (activeBtn) {
+                activeBtn.classList.add('role-card-active');
+                activeBtn.classList.remove('text-slate-600');
+            }
         }
+
+        // Maintain role state on page load if validation fails
+        document.addEventListener('DOMContentLoaded', function () {
+            const currentRole = document.getElementById('selected_role').value || 'customer';
+            selectRole(currentRole);
+        });
     </script>
 </x-guest-layout>

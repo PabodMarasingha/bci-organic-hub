@@ -23,26 +23,35 @@ class AuthenticatedSessionController extends Controller
      * Handle an incoming authentication request.
      */
     public function store(LoginRequest $request): RedirectResponse
-{
-    $request->authenticate();
+    {
+        // 1. Authenticate credentials (Email & Password)
+        $request->authenticate();
 
-    $request->session()->regenerate();
+        $user = Auth::user();
 
-    $user = Auth::user();
+        // 2. Form එකෙන් එවන Role එක User ගේ DB Role එකට Match වෙනවාදැයි පරීක්ෂා කිරීම
+        if ($request->filled('role') && $user->role !== $request->role) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
 
-    // Role එක අනුව Redirect हुने Path එක තීරණය කිරීම
-    switch ($user->role) {
-        case 'admin':
-            return redirect()->intended('/admin/ingredients'); // හෝ /admin/orders
-        case 'kitchen':
-            return redirect()->intended('/kitchen');
-        case 'delivery':
-            return redirect()->intended('/delivery');
-        case 'customer':
-        default:
-            return redirect()->intended('/dashboard');
+            return back()->withErrors([
+                'email' => 'Selected role does not match this user account.',
+            ])->onlyInput('email');
+        }
+
+        // 3. Regenerate session upon successful login
+        $request->session()->regenerate();
+
+        // 4. Role එක අනුව අදාළ Dashboard එකට Redirect කිරීම
+        return match ($user->role) {
+            'admin' => redirect()->intended(route('admin.ingredients.index', absolute: false)),
+            'kitchen' => redirect()->intended('/kitchen'),
+            'delivery' => redirect()->intended('/delivery'),
+            default => redirect()->intended('/dashboard'),
+        };
     }
-}
+
     /**
      * Destroy an authenticated session.
      */
