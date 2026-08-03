@@ -39,6 +39,7 @@ Route::middleware('auth')->group(function () {
     // Customer Order Routes
     Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
     Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
+    Route::get('/my-orders', [OrderController::class, 'myOrders'])->name('orders.index');
 
     // Kitchen Dashboard Routes
     Route::get('/kitchen', [KitchenController::class, 'index'])->name('kitchen.index');

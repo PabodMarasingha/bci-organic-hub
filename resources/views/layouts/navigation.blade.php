@@ -23,6 +23,9 @@
                         <x-nav-link :href="route('cart')" :active="request()->routeIs('cart')">
                             {{ __('Cart') }}
                         </x-nav-link>
+                        <x-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.index') || request()->routeIs('orders.show')">
+                            {{ __('My Orders') }}
+                        </x-nav-link>
                     @endif
 
                     @if (auth()->user()->hasRole('kitchen'))
@@ -107,6 +110,9 @@
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('cart')" :active="request()->routeIs('cart')">
                     {{ __('Cart') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.index') || request()->routeIs('orders.show')">
+                    {{ __('My Orders') }}
                 </x-responsive-nav-link>
             @endif
 

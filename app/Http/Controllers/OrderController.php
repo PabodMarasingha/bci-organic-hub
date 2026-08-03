@@ -96,4 +96,14 @@ class OrderController extends Controller
 
         return view('orders.show', ['order' => $order]);
     }
+
+    public function myOrders(Request $request)
+{
+    $orders = CustomerOrder::with(['items', 'deliveryZone'])
+        ->where('user_id', $request->user()->id)
+        ->latest()
+        ->get();
+
+    return view('orders.index', compact('orders'));
+}
 }
