@@ -36,6 +36,15 @@
                             {{ __('Delivery') }}
                         </x-nav-link>
                     @endif
+
+                    @if (auth()->user()->hasRole('admin'))
+                        <x-nav-link :href="route('admin.orders')" :active="request()->routeIs('admin.orders')">
+                            {{ __('Orders') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('admin.ingredients')" :active="request()->routeIs('admin.ingredients')">
+                            {{ __('Ingredients') }}
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -110,6 +119,15 @@
             @if (auth()->user()->hasRole('delivery'))
                 <x-responsive-nav-link :href="route('delivery.index')" :active="request()->routeIs('delivery.index')">
                     {{ __('Delivery') }}
+                </x-responsive-nav-link>
+            @endif
+
+            @if (auth()->user()->hasRole('admin'))
+                <x-responsive-nav-link :href="route('admin.orders')" :active="request()->routeIs('admin.orders')">
+                    {{ __('Orders') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.ingredients')" :active="request()->routeIs('admin.ingredients')">
+                    {{ __('Ingredients') }}
                 </x-responsive-nav-link>
             @endif
         </div>

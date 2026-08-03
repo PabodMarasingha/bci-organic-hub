@@ -48,6 +48,14 @@ Route::middleware('auth')->group(function () {
     // Campus Delivery Routes
     Route::get('/delivery', [DeliveryController::class, 'index'])->name('delivery.index');
     Route::patch('/delivery/{id}/status', [DeliveryController::class, 'updateStatus'])->name('delivery.updateStatus');
+
+    // Admin Routes
+Route::prefix('admin')->group(function () {
+    Route::get('/ingredients', [\App\Http\Controllers\Admin\IngredientController::class, 'index'])->name('admin.ingredients');
+    Route::post('/ingredients', [\App\Http\Controllers\Admin\IngredientController::class, 'store'])->name('admin.ingredients.store');
+    Route::delete('/ingredients/{ingredient}', [\App\Http\Controllers\Admin\IngredientController::class, 'destroy'])->name('admin.ingredients.destroy');
+    Route::get('/orders', [\App\Http\Controllers\Admin\OrderOverviewController::class, 'index'])->name('admin.orders');
+});
 });
 
 require __DIR__.'/auth.php';
