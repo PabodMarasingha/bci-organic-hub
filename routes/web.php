@@ -26,11 +26,12 @@ Route::middleware('auth')->group(function () {
     // 1. CUSTOMER ROUTES
     // ----------------------------------------------------
     Route::middleware('role:customer')->group(function () {
+        
         Route::get('/dashboard', function () {
             return view('dashboard');
         })->name('dashboard');
 
-        // Dynamic Menu Route (handled via OrderController)
+        // Dynamic Menu Route
         Route::get('/menu', [OrderController::class, 'menu'])->name('menu');
 
         // Product Customization Route
@@ -41,14 +42,19 @@ Route::middleware('auth')->group(function () {
         // Cart Management Routes
         Route::get('/cart', [OrderController::class, 'cart'])->name('cart');
         Route::post('/cart/add', [OrderController::class, 'addToCart'])->name('cart.add');
-        Route::post('/cart/remove/{index}', [OrderController::class, 'removeFromCart'])->name('cart.remove');
+        Route::patch('/cart/update/{index}', [OrderController::class, 'updateCart'])->name('cart.update');
+        Route::delete('/cart/remove/{index}', [OrderController::class, 'removeFromCart'])->name('cart.remove');
 
         // Order Placement & History Routes
         Route::get('/orders/create', [OrderController::class, 'create'])->name('orders.create');
         Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+        Route::get('/orders', [OrderController::class, 'myOrders'])->name('orders.index');
+        
+        // ⚠️ Cancel Route එක (GET, POST, PATCH තුනටම සහය දක්වයි)
+        Route::match(['get', 'post', 'patch'], '/orders/{id}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+        
+        // Dynamic ID Route (සමස්ත /orders/{id} එක පහළින් තිබිය යුතුය)
         Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
-        Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
-        Route::get('/my-orders', [OrderController::class, 'myOrders'])->name('orders.index');
     });
 
     // ----------------------------------------------------
@@ -72,10 +78,10 @@ Route::middleware('auth')->group(function () {
     // 4. ADMIN ROUTES
     // ----------------------------------------------------
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
-        Route::get('/ingredients', [IngredientController::class, 'index'])->name('ingredients.index');
+        Route::get('/ingredients', [IngredientController::class, 'index'])->name('ingredients');
         Route::post('/ingredients', [IngredientController::class, 'store'])->name('ingredients.store');
         Route::delete('/ingredients/{ingredient}', [IngredientController::class, 'destroy'])->name('ingredients.destroy');
-        Route::get('/orders', [OrderOverviewController::class, 'index'])->name('orders.index');
+        Route::get('/orders', [OrderOverviewController::class, 'index'])->name('orders');
     });
 
 });

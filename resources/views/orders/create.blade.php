@@ -1,51 +1,159 @@
 <x-app-layout>
-    <div class="max-w-2xl mx-auto p-6">
-        <h1 class="text-2xl font-bold mb-4">Checkout</h1>
-
-        @if ($errors->any())
-            <div class="bg-red-100 text-red-800 p-3 rounded mb-4">
-                {{ $errors->first() }}
-            </div>
-        @endif
-
-        <div class="mb-6">
-            <h2 class="font-semibold mb-2">Order Summary</h2>
-            @foreach ($cart as $item)
-                <p class="text-sm text-gray-600">
-                    {{ $item['item_name'] }} — Rs. {{ number_format($item['unit_price'], 2) }}
-                </p>
-            @endforeach
-            <p class="font-semibold mt-2">
-                Total: Rs. {{ number_format(collect($cart)->sum(fn($i) => $i['unit_price'] * $i['quantity']), 2) }}
-            </p>
+    <x-slot name="header">
+        <div class="flex justify-between items-center">
+            <h2 class="font-bold text-2xl text-slate-800 leading-tight">
+                {{ __('Checkout Order') }}
+            </h2>
+            <a href="{{ route('cart') }}" class="text-sm font-semibold text-green-600 hover:text-green-700">
+                &larr; Return to Cart
+            </a>
         </div>
+    </x-slot>
 
-        <form method="POST" action="{{ route('orders.store') }}">
-            @csrf
+    <div class="py-8 bg-slate-50 min-h-screen">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
-            <label class="block font-medium text-sm text-gray-700">Delivery Zone</label>
-            <select name="delivery_zone_id" class="w-full border-gray-300 rounded-md shadow-sm mb-4" required>
-                @foreach ($zones as $zone)
-                    <option value="{{ $zone->id }}">{{ $zone->name }}</option>
-                @endforeach
-            </select>
+            <!-- Validation Errors -->
+            @if($errors->any())
+                <div class="p-4 bg-red-100 border border-red-200 text-red-800 rounded-2xl shadow-sm text-sm font-medium">
+                    <ul class="list-disc list-inside space-y-1">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
-            <label class="block font-medium text-sm text-gray-700">Dropoff Location / Room No.</label>
-            <input type="text" name="dropoff_location" placeholder="e.g., Lab 201" class="w-full border-gray-300 rounded-md shadow-sm mb-4" required>
+            <form action="{{ route('orders.store') }}" method="POST">
+                @csrf
 
-            <label class="block font-medium text-sm text-gray-700">Payment Method</label>
-            <select name="payment_method" class="w-full border-gray-300 rounded-md shadow-sm mb-4" required>
-                <option value="digital_wallet">Campus Digital Wallet</option>
-                <option value="card">Credit / Debit Card</option>
-                <option value="cash_on_delivery">Cash on Delivery</option>
-            </select>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    
+                    <!-- Checkout Details Form (2 Columns) -->
+                    <div class="lg:col-span-2 space-y-6">
+                        
+                        <!-- Delivery Information -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                            <h3 class="font-bold text-slate-800 text-lg border-b border-slate-100 pb-3 flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                <span>1. Delivery Details</span>
+                            </h3>
 
-            <label class="block font-medium text-sm text-gray-700">Special Instructions</label>
-            <input type="text" name="special_instructions" placeholder="e.g., Less dressing" class="w-full border-gray-300 rounded-md shadow-sm mb-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Delivery Zone -->
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Delivery Zone *</label>
+                                    <select name="delivery_zone_id" required class="w-full rounded-xl border border-slate-200 text-sm focus:ring-green-500 focus:border-green-500">
+                                        <option value="" disabled selected>Select Your Zone</option>
+                                        @foreach($zones as $zone)
+                                            <option value="{{ $zone->id }}">
+                                                {{ $zone->name ?? $zone->zone_name }} 
+                                                @if(isset($zone->delivery_fee))
+                                                    (+ LKR {{ number_format($zone->delivery_fee, 2) }})
+                                                @endif
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
 
-            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded font-semibold">
-                Place Order Now
-            </button>
-        </form>
+                                <!-- Dropoff Location -->
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Dropoff Address / Location *</label>
+                                    <textarea name="dropoff_location" rows="3" required placeholder="Enter full address, street name, house number..." 
+                                        class="w-full rounded-xl border border-slate-200 text-sm focus:ring-green-500 focus:border-green-500">{{ old('dropoff_location') }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Method -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                            <h3 class="font-bold text-slate-800 text-lg border-b border-slate-100 pb-3 flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                </svg>
+                                <span>2. Payment Method</span>
+                            </h3>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <label class="border border-slate-200 p-4 rounded-xl flex items-center space-x-3 cursor-pointer hover:border-green-500 transition">
+                                    <input type="radio" name="payment_method" value="cod" checked class="text-green-600 focus:ring-green-500">
+                                    <div>
+                                        <span class="block font-bold text-slate-800 text-sm">Cash on Delivery</span>
+                                        <span class="text-xs text-slate-400">Pay when your order arrives</span>
+                                    </div>
+                                </label>
+
+                                <label class="border border-slate-200 p-4 rounded-xl flex items-center space-x-3 cursor-pointer hover:border-green-500 transition">
+                                    <input type="radio" name="payment_method" value="card" class="text-green-600 focus:ring-green-500">
+                                    <div>
+                                        <span class="block font-bold text-slate-800 text-sm">Card Payment</span>
+                                        <span class="text-xs text-slate-400">Online card payment</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Special Instructions -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                            <h3 class="font-bold text-slate-800 text-lg border-b border-slate-100 pb-3 flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                                <span>3. Special Instructions (Optional)</span>
+                            </h3>
+
+                            <div>
+                                <textarea name="special_instructions" rows="2" placeholder="Any allergy warnings, food spice preference, or delivery notes..." 
+                                    class="w-full rounded-xl border border-slate-200 text-sm focus:ring-green-500 focus:border-green-500">{{ old('special_instructions') }}</textarea>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Order Summary Sidebar (1 Column) -->
+                    <div class="lg:col-span-1">
+                        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6 sticky top-6">
+                            <h3 class="font-bold text-slate-800 text-lg border-b border-slate-100 pb-4">Order Items</h3>
+
+                            <div class="divide-y divide-slate-100 space-y-3 max-h-60 overflow-y-auto pr-1">
+                                @php $subtotal = 0; @endphp
+                                @foreach($cart as $item)
+                                    @php 
+                                        $itemTotal = $item['unit_price'] * $item['quantity'];
+                                        $subtotal += $itemTotal;
+                                    @endphp
+                                    <div class="pt-3 flex justify-between text-xs">
+                                        <div>
+                                            <span class="font-bold text-slate-800 block">{{ $item['item_name'] }}</span>
+                                            <span class="text-slate-400">Qty: {{ $item['quantity'] }} x LKR {{ number_format($item['unit_price'], 2) }}</span>
+                                        </div>
+                                        <span class="font-bold text-slate-700">LKR {{ number_format($itemTotal, 2) }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <div class="border-t border-slate-100 pt-4 space-y-2 text-sm">
+                                <div class="flex justify-between font-bold text-base text-slate-800">
+                                    <span>Total Amount</span>
+                                    <span class="text-green-600">LKR {{ number_format($subtotal, 2) }}</span>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow transition duration-150 flex items-center justify-center space-x-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Confirm & Place Order</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </form>
+
+        </div>
     </div>
 </x-app-layout>

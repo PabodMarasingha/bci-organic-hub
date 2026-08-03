@@ -48,7 +48,7 @@ class OrderController extends Controller
         $product = ProductItem::findOrFail($validated['product_id']);
         $cart = Session::get('cart', []);
 
-        // Security Check: Database එකේ ඇති සැබෑ Price එක භාවිත කිරීම
+        // Database එකේ ඇති සැබෑ Price එක භාවිත කිරීම
         $unitPrice = $product->price;
 
         $existingKey = null;
@@ -60,10 +60,8 @@ class OrderController extends Controller
         }
 
         if ($existingKey !== null) {
-            // Cart එකේ දැනටමත් තියෙනවා නම් Quantity එක එකතු කිරීම
             $cart[$existingKey]['quantity'] += $validated['quantity'];
         } else {
-            // නැත්නම් අලුතින් Cart එකට එකතු කිරීම
             $cart[] = [
                 'product_id' => $product->id,
                 'item_name' => $product->name,
@@ -203,9 +201,15 @@ class OrderController extends Controller
      */
     public function show(Request $request, int|string $id)
     {
+        // 404 නොවී Check කිරීම සඳහා
         $order = CustomerOrder::with(['items', 'payment', 'delivery', 'deliveryZone'])
             ->where('user_id', $request->user()->id)
-            ->findOrFail($id);
+            ->where('id', $id)
+            ->first();
+
+        if (!$order) {
+            return redirect()->route('orders.index')->with('error', 'Order not found.');
+        }
 
         return view('orders.show', compact('order'));
     }
@@ -224,20 +228,30 @@ class OrderController extends Controller
     }
 
     /**
-     * Cancel a pending order.
+     * Cancel a pending order (Fixed to prevent 404).
      */
     public function cancel(Request $request, int|string $id)
     {
+        // findOrFail වෙනුවට first() යොදා 404 නොවී Handle කිරීම
         $order = CustomerOrder::where('user_id', $request->user()->id)
-            ->where('status', 'pending')
-            ->findOrFail($id);
+            ->where('id', $id)
+            ->first();
 
-        $order->update(['status' => 'cancelled']);
-
-        if ($order->delivery) {
-            $order->delivery->update(['delivery_status' => 'cancelled']);
+        if (!$order) {
+            return redirect()->route('orders.index')->with('error', 'Order not found.');
         }
 
-        return back()->with('message', 'Order cancelled successfully.');
+        // Status එක Pending නම් පමණක් වෙනස් කිරීම
+        if (strtolower($order->status) === 'pending') {
+            $order->update(['status' => 'cancelled']);
+
+            if ($order->delivery) {
+                $order->delivery->update(['delivery_status' => 'cancelled']);
+            }
+
+            return redirect()->route('orders.show', $order->id)->with('message', 'Order cancelled successfully.');
+        }
+
+        return redirect()->route('orders.show', $order->id)->with('message', 'This order cannot be cancelled.');
     }
 }
