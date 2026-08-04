@@ -22,6 +22,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
     ];
 
     /**
@@ -45,5 +46,13 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Helper check to ensure role compatibility
+     */
+    public function getRoleAttribute()
+    {
+        return $this->attributes['role'] ?? $this->roles->first()?->name ?? 'customer';
     }
 }

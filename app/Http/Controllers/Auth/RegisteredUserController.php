@@ -29,37 +29,37 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        // 1. Role එකත් එක්ක Form Validation
+        // 1. Validate incoming registration request including role
         $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'name'     => ['required', 'string', 'max:255'],
+            'email'    => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required', 'string', 'in:customer,kitchen,delivery,admin'], // Role validation
+            'role'     => ['required', 'string', 'in:customer,kitchen,delivery,admin'],
         ]);
 
-        // 2. Database එකේ Role එකත් එක්ක User හදාගැනීම
+        // 2. Create new user record with selected role
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
+            'name'     => $request->name,
+            'email'    => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role, // Selected Role එක save කිරීම
+            'role'     => $request->role,
         ]);
+
+        // 3. Assign Spatie Role (For Spatie\Permission package consistency)
+        if (method_exists($user, 'assignRole')) {
+            $user->assignRole($request->role);
+        }
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        // 3. Select කරපු Role එක අනුව අදාළ Page එකට Redirect කිරීම
-        switch ($user->role) {
-            case 'admin':
-                return redirect()->route('admin.ingredients.index');
-            case 'kitchen':
-                return redirect()->route('kitchen.index');
-            case 'delivery':
-                return redirect()->route('delivery.index');
-            case 'customer':
-            default:
-                return redirect()->route('dashboard');
-        }
+        // 4. Redirect user to corresponding dashboard based on assigned role
+        return match ($user->role) {
+            'admin'    => redirect()->route('admin.orders'),
+            'kitchen'  => redirect()->route('kitchen.index'),
+            'delivery' => redirect()->route('delivery.index'),
+            default    => redirect()->route('dashboard'), // Customer
+        };
     }
 }

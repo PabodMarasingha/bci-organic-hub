@@ -34,10 +34,17 @@
 
                 <!-- 1. Role Selection Grid -->
                 <div class="mb-6">
-                    <label class="block text-xs font-semibold uppercase text-slate-400 mb-3 tracking-wider">
-                        Register As
-                    </label>
-                    <input type="hidden" name="role" id="selected_role" value="customer">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="block text-xs font-semibold uppercase text-slate-400 tracking-wider">
+                            Register As
+                        </label>
+                        <span id="active-role-badge" class="text-[10px] font-extrabold uppercase px-2.5 py-0.5 bg-green-100 text-green-700 rounded-full border border-green-300">
+                            Customer
+                        </span>
+                    </div>
+
+                    <!-- Hidden Input for Selected Role -->
+                    <input type="hidden" name="role" id="selected_role" value="{{ old('role', 'customer') }}">
 
                     <div class="grid grid-cols-2 gap-3">
                         <!-- Customer -->
@@ -68,6 +75,7 @@
                             <span class="text-xs font-bold">Admin</span>
                         </button>
                     </div>
+                    <x-input-error :messages="$errors->get('role')" class="mt-2" />
                 </div>
 
                 <!-- Name Input -->
@@ -123,16 +131,35 @@
     <!-- Role Selection JS -->
     <script>
         function selectRole(role) {
+            // Update hidden input value
             document.getElementById('selected_role').value = role;
 
+            // Update UI badge
+            const badge = document.getElementById('active-role-badge');
+            if (badge) {
+                badge.innerText = role.toUpperCase();
+            }
+
+            // Remove active class from all role buttons
             document.querySelectorAll('.role-btn').forEach(btn => {
                 btn.classList.remove('role-card-active');
                 btn.classList.add('text-slate-600');
             });
 
+            // Set active class to selected button
             const activeBtn = document.getElementById('role-btn-' + role);
-            activeBtn.classList.add('role-card-active');
-            activeBtn.classList.remove('text-slate-600');
+            if (activeBtn) {
+                activeBtn.classList.add('role-card-active');
+                activeBtn.classList.remove('text-slate-600');
+            }
         }
+
+        // Maintain old input role state after validation errors
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialRole = document.getElementById('selected_role').value;
+            if (initialRole) {
+                selectRole(initialRole);
+            }
+        });
     </script>
 </x-guest-layout>
