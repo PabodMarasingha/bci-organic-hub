@@ -6,19 +6,35 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::create('deliveries', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('customer_order_id')->constrained()->onDelete('cascade');
-    $table->foreignId('driver_id')->nullable()->constrained('users');
-    $table->string('dropoff_location')->nullable();
-    $table->enum('delivery_status', ['unassigned', 'picked_up', 'delivered'])->default('unassigned');
-    $table->timestamp('delivered_at')->nullable();
-    $table->timestamps();
-});
+            $table->id();
+            $table->foreignId('customer_order_id')->constrained()->onDelete('cascade');
+            $table->foreignId('driver_id')->nullable()->constrained('users');
+            $table->string('dropoff_location')->nullable();
+            
+            // 'cancelled' සහ 'out_for_delivery' status එකතු කරන ලදී
+            $table->enum('delivery_status', [
+                'unassigned', 
+                'assigned',
+                'picked_up', 
+                'out_for_delivery', 
+                'delivered', 
+                'cancelled'
+            ])->default('unassigned');
+            
+            $table->timestamp('delivered_at')->nullable();
+            $table->timestamps();
+        });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('deliveries');

@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 
 class KitchenController extends Controller
 {
+    /**
+     * Display kitchen orders dashboard.
+     */
     public function index()
     {
         $orders = CustomerOrder::with(['items', 'user'])
@@ -20,21 +23,31 @@ class KitchenController extends Controller
         return view('kitchen.index', compact('orders', 'ingredients'));
     }
 
-    public function updateStatus(Request $request, $id)
+    /**
+     * Update order status from kitchen dashboard.
+     */
+    public function updateStatus(Request $request, int|string $id)
     {
-        $request->validate([
+        $validated = $request->validate([
             'status' => 'required|in:pending,preparing,ready,out_for_delivery,delivered,cancelled',
         ]);
 
         $order = CustomerOrder::findOrFail($id);
-        $order->update(['status' => $request->status]);
+        $order->update(['status' => $validated['status']]);
 
-        return back()->with('message', 'Order status updated.');
+        return back()->with('message', 'Order status updated successfully.');
     }
 
+    /**
+     * Toggle ingredient stock availability.
+     */
     public function toggleStock(Ingredient $ingredient)
     {
-        $ingredient->update(['in_stock' => !$ingredient->in_stock]);
-        return back();
+        // Toggle the 'in_stock' boolean status
+        $ingredient->update([
+            'in_stock' => !$ingredient->in_stock,
+        ]);
+
+        return back()->with('message', 'Ingredient stock updated successfully.');
     }
 }

@@ -45,7 +45,27 @@
     <div class="py-10 bg-slate-50/80 min-h-screen relative overflow-hidden">
         <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-white to-transparent opacity-60 pointer-events-none"></div>
         
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-6">
+
+            {{-- Alert Messages --}}
+            @if(session('message'))
+                <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-sm rounded-2xl shadow-sm flex items-center justify-between animate-fade-in-up">
+                    <div class="flex items-center gap-2">
+                        <span>✨</span>
+                        <span>{{ session('message') }}</span>
+                    </div>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="p-4 bg-rose-50 border border-rose-200 text-rose-700 font-bold text-sm rounded-2xl shadow-sm flex items-center justify-between animate-fade-in-up">
+                    <div class="flex items-center gap-2">
+                        <span>⚠️</span>
+                        <span>{{ session('error') }}</span>
+                    </div>
+                </div>
+            @endif
+
             <div class="bg-white/80 backdrop-blur-xl rounded-[2rem] border border-white/50 shadow-xl shadow-slate-200/50 overflow-hidden animate-fade-in-up" style="animation-delay: 200ms;">
                 
                 <div class="p-6 sm:px-8 sm:py-6 border-b border-slate-100 bg-white/50 flex justify-between items-center">
@@ -74,31 +94,32 @@
                             <tbody class="divide-y divide-slate-50 text-sm">
                                 @foreach($orders as $order)
                                     @php
+                                        $statusKey = strtolower($order->status);
                                         $statusColors = [
-                                            'pending'   => ['bg' => 'bg-amber-50', 'text' => 'text-amber-700', 'border' => 'border-amber-200', 'dot' => 'bg-amber-500'],
-                                            'cooking'   => ['bg' => 'bg-blue-50', 'text' => 'text-blue-700', 'border' => 'border-blue-200', 'dot' => 'bg-blue-500 animate-pulse'],
-                                            'ready'     => ['bg' => 'bg-purple-50', 'text' => 'text-purple-700', 'border' => 'border-purple-200', 'dot' => 'bg-purple-500'],
-                                            'completed' => ['bg' => 'bg-emerald-50', 'text' => 'text-emerald-700', 'border' => 'border-emerald-200', 'dot' => 'bg-emerald-500'],
-                                            'cancelled' => ['bg' => 'bg-rose-50', 'text' => 'text-rose-700', 'border' => 'border-rose-200', 'dot' => 'bg-rose-500'],
+                                            'pending'          => ['bg' => 'bg-amber-50', 'text' => 'text-amber-700', 'border' => 'border-amber-200', 'dot' => 'bg-amber-500 animate-pulse'],
+                                            'preparing'        => ['bg' => 'bg-blue-50', 'text' => 'text-blue-700', 'border' => 'border-blue-200', 'dot' => 'bg-blue-500 animate-pulse'],
+                                            'out_for_delivery' => ['bg' => 'bg-purple-50', 'text' => 'text-purple-700', 'border' => 'border-purple-200', 'dot' => 'bg-purple-500'],
+                                            'delivered'        => ['bg' => 'bg-emerald-50', 'text' => 'text-emerald-700', 'border' => 'border-emerald-200', 'dot' => 'bg-emerald-500'],
+                                            'cancelled'        => ['bg' => 'bg-rose-50', 'text' => 'text-rose-700', 'border' => 'border-rose-200', 'dot' => 'bg-rose-500'],
                                         ];
-                                        $style = $statusColors[strtolower($order->status)] ?? ['bg' => 'bg-slate-50', 'text' => 'text-slate-700', 'border' => 'border-slate-200', 'dot' => 'bg-slate-400'];
+                                        $style = $statusColors[$statusKey] ?? ['bg' => 'bg-slate-50', 'text' => 'text-slate-700', 'border' => 'border-slate-200', 'dot' => 'bg-slate-400'];
                                     @endphp
                                     <tr class="group hover:bg-white transition-all duration-300 hover:shadow-[0_0_20px_-3px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 animate-fade-in-up relative z-0 hover:z-10 bg-transparent" @style(['animation-delay: ' . (300 + ($loop->index * 100)) . 'ms'])>
                                         <td class="py-5 px-8 font-black text-slate-800">
-                                            <span class="text-slate-400 font-medium">#</span>{{ $order->id }}
+                                            <span class="text-slate-400 font-medium">#</span>ORD-{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}
                                         </td>
                                         <td class="py-5 px-8 text-slate-500 font-medium">
                                             <div class="flex items-center gap-2">
                                                 <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                                {{ $order->created_at ? $order->created_at->format('M d, Y') : 'N/A' }}
+                                                {{ $order->created_at ? $order->created_at->format('M d, Y - h:i A') : 'N/A' }}
                                             </div>
                                         </td>
                                         <td class="py-5 px-8 text-slate-600 font-medium">
                                             <div class="flex items-center gap-2">
-                                                <div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">
+                                                <div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 border border-slate-200/50">
                                                     {{ $order->items->count() }}
                                                 </div>
-                                                {{ Str::plural('Item', $order->items->count()) }}
+                                                <span>{{ Str::plural('Item', $order->items->count()) }}</span>
                                             </div>
                                         </td>
                                         <td class="py-5 px-8">
@@ -107,14 +128,28 @@
                                         <td class="py-5 px-8">
                                             <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-extrabold uppercase tracking-wide border {{ $style['bg'] }} {{ $style['text'] }} {{ $style['border'] }}">
                                                 <span class="w-1.5 h-1.5 rounded-full {{ $style['dot'] }}"></span>
-                                                {{ $order->status }}
+                                                {{ str_replace('_', ' ', $order->status) }}
                                             </div>
                                         </td>
                                         <td class="py-5 px-8 text-right">
-                                            <a href="{{ route('orders.show', $order->id) }}" class="inline-flex items-center justify-center gap-2 text-xs font-bold text-emerald-600 hover:text-white bg-emerald-50 hover:bg-emerald-500 border border-emerald-100 hover:border-emerald-500 px-4 py-2 rounded-xl transition-all duration-300">
-                                                Track
-                                                <svg class="w-3.5 h-3.5 transform group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                                            </a>
+                                            <div class="inline-flex items-center gap-2">
+                                                @if(strtolower($order->status) === 'pending')
+                                                    <!-- Cancel Form Update (Added @method('PATCH') or adjust based on your route) -->
+                                                    <form action="{{ route('orders.cancel', $order->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this order?');" class="inline">
+                                                        @csrf
+                                                        @method('PATCH') <!-- 👈 THIS IS CRITICAL: Add this line if your route is a PATCH or PUT -->
+                                                        
+                                                        <button type="submit" class="text-xs font-bold text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-3 py-2 rounded-xl transition-all">
+                                                            Cancel
+                                                        </button>
+                                                    </form>
+                                                @endif
+
+                                                <a href="{{ route('orders.show', $order->id) }}" class="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-white bg-emerald-50 hover:bg-emerald-500 border border-emerald-100 hover:border-emerald-500 px-4 py-2 rounded-xl transition-all duration-300 shadow-2xs">
+                                                    Track
+                                                    <svg class="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                                </a>
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
