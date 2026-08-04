@@ -39,6 +39,7 @@ class OrderController extends Controller
      */
     public function addToCart(Request $request)
     {
+        // Validation check
         $validated = $request->validate([
             'product_id' => 'required|exists:product_items,id',
             'quantity' => 'required|integer|min:1',
@@ -48,12 +49,17 @@ class OrderController extends Controller
         $product = ProductItem::findOrFail($validated['product_id']);
         $cart = Session::get('cart', []);
 
-        // Database එකේ ඇති සැබෑ Price එක භාවිත කිරීම
-        $unitPrice = $product->price;
+        // Flexible price fallback
+        $unitPrice = $product->price ?? $product->base_price ?? 0;
+        $customizations = $validated['customizations'] ?? [];
 
+        // Check if item already exists in cart with same customizations
         $existingKey = null;
         foreach ($cart as $key => $item) {
-            if ($item['product_id'] == $product->id && $item['customizations'] == ($validated['customizations'] ?? [])) {
+            $itemProductId = $item['product_id'] ?? $item['item_id'] ?? null;
+            $itemCustomizations = $item['customizations'] ?? [];
+
+            if ($itemProductId == $product->id && $itemCustomizations == $customizations) {
                 $existingKey = $key;
                 break;
             }
@@ -65,12 +71,13 @@ class OrderController extends Controller
             $cart[] = [
                 'product_id' => $product->id,
                 'item_name' => $product->name,
-                'customizations' => $validated['customizations'] ?? [],
-                'quantity' => $validated['quantity'],
-                'unit_price' => $unitPrice,
+                'customizations' => $customizations,
+                'quantity' => (int) $validated['quantity'],
+                'unit_price' => (float) $unitPrice,
             ];
         }
 
+        // Save updated cart back to session
         Session::put('cart', $cart);
 
         return redirect()->route('cart')->with('message', 'Item added to cart successfully!');
@@ -96,7 +103,7 @@ class OrderController extends Controller
         $cart = Session::get('cart', []);
 
         if (isset($cart[$index])) {
-            $cart[$index]['quantity'] = $validated['quantity'];
+            $cart[$index]['quantity'] = (int) $validated['quantity'];
             Session::put('cart', $cart);
             return back()->with('message', 'Cart updated successfully!');
         }
@@ -113,6 +120,7 @@ class OrderController extends Controller
 
         if (isset($cart[$index])) {
             unset($cart[$index]);
+            // Re-index array so keys stay sequential (0, 1, 2...)
             Session::put('cart', array_values($cart));
         }
 
@@ -120,24 +128,44 @@ class OrderController extends Controller
     }
 
     /**
-     * Display order checkout form.
+     * Display order checkout form with SELECTED items.
      */
-    public function create()
+    public function create(Request $request)
     {
         $cart = Session::get('cart', []);
 
         if (empty($cart)) {
-            return redirect()->route('menu')->with('error', 'Your cart is empty. Please add items before checkout.');
+            return redirect()->route('menu')->with('error', 'Your cart is empty.');
+        }
+
+        // Get selected item indices from cart view
+        $selectedIndexes = $request->input('selected_items', []);
+
+        if (empty($selectedIndexes)) {
+            return redirect()->route('cart')->withErrors(['cart' => 'Please select at least one item to proceed.']);
+        }
+
+        // Filter cart to only selected items
+        $checkoutCart = [];
+        foreach ($selectedIndexes as $index) {
+            if (isset($cart[$index])) {
+                $checkoutCart[$index] = $cart[$index];
+            }
+        }
+
+        if (empty($checkoutCart)) {
+            return redirect()->route('cart')->withErrors(['cart' => 'Selected items are invalid or no longer in cart.']);
         }
 
         return view('orders.create', [
-            'cart' => $cart,
+            'cart' => $checkoutCart,
+            'selectedIndexes' => $selectedIndexes,
             'zones' => DeliveryZone::all(),
         ]);
     }
 
     /**
-     * Store new customer order in database.
+     * Store new customer order in database for selected items.
      */
     public function store(Request $request)
     {
@@ -146,19 +174,29 @@ class OrderController extends Controller
             'dropoff_location' => 'required|string',
             'payment_method' => 'required|string',
             'special_instructions' => 'nullable|string',
+            'selected_indexes' => 'required|array',
         ]);
 
         $cart = Session::get('cart', []);
+        $selectedIndexes = $validated['selected_indexes'];
 
-        if (empty($cart)) {
-            return redirect()->route('menu')->withErrors(['cart' => 'Your cart is empty.']);
+        // Get only the selected items
+        $orderItems = [];
+        foreach ($selectedIndexes as $index) {
+            if (isset($cart[$index])) {
+                $orderItems[$index] = $cart[$index];
+            }
         }
 
-        $totalAmount = collect($cart)->sum(function ($item) {
+        if (empty($orderItems)) {
+            return redirect()->route('cart')->withErrors(['cart' => 'No valid items were selected for order processing.']);
+        }
+
+        $totalAmount = collect($orderItems)->sum(function ($item) {
             return $item['unit_price'] * $item['quantity'];
         });
 
-        $order = DB::transaction(function () use ($validated, $cart, $totalAmount, $request) {
+        $order = DB::transaction(function () use ($validated, $orderItems, $totalAmount, $request) {
             $order = CustomerOrder::create([
                 'user_id' => $request->user()->id,
                 'delivery_zone_id' => $validated['delivery_zone_id'],
@@ -167,7 +205,7 @@ class OrderController extends Controller
                 'special_instructions' => $validated['special_instructions'] ?? null,
             ]);
 
-            foreach ($cart as $item) {
+            foreach ($orderItems as $item) {
                 $order->items()->create([
                     'item_name' => $item['item_name'],
                     'customizations' => $item['customizations'] ?? [],
@@ -190,7 +228,13 @@ class OrderController extends Controller
             return $order;
         });
 
-        Session::forget('cart');
+        // Order එක සම්පූර්ණ වූ පසු SELECT කල items ටික විතරක් Cart එකෙන් අයින් කරන්න
+        foreach ($selectedIndexes as $index) {
+            unset($cart[$index]);
+        }
+
+        // Re-index session cart and update
+        Session::put('cart', array_values($cart));
 
         return redirect()->route('orders.show', $order->id)
             ->with('message', 'Order placed successfully!');
@@ -201,7 +245,6 @@ class OrderController extends Controller
      */
     public function show(Request $request, int|string $id)
     {
-        // 404 නොවී Check කිරීම සඳහා
         $order = CustomerOrder::with(['items', 'payment', 'delivery', 'deliveryZone'])
             ->where('user_id', $request->user()->id)
             ->where('id', $id)
@@ -228,11 +271,10 @@ class OrderController extends Controller
     }
 
     /**
-     * Cancel a pending order (Fixed to prevent 404).
+     * Cancel a pending order.
      */
     public function cancel(Request $request, int|string $id)
     {
-        // findOrFail වෙනුවට first() යොදා 404 නොවී Handle කිරීම
         $order = CustomerOrder::where('user_id', $request->user()->id)
             ->where('id', $id)
             ->first();
@@ -241,7 +283,6 @@ class OrderController extends Controller
             return redirect()->route('orders.index')->with('error', 'Order not found.');
         }
 
-        // Status එක Pending නම් පමණක් වෙනස් කිරීම
         if (strtolower($order->status) === 'pending') {
             $order->update(['status' => 'cancelled']);
 

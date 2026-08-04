@@ -1,17 +1,17 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
+        <div class="flex justify-between items-center max-w-7xl mx-auto">
             <h2 class="font-bold text-2xl text-slate-800 leading-tight">
                 {{ __('Checkout Order') }}
             </h2>
-            <a href="{{ route('cart') }}" class="text-sm font-semibold text-green-600 hover:text-green-700">
+            <a href="{{ route('cart') }}" class="text-sm font-semibold text-green-600 hover:text-green-700 transition">
                 &larr; Return to Cart
             </a>
         </div>
     </x-slot>
 
     <div class="py-8 bg-slate-50 min-h-screen">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
             <!-- Validation Errors -->
             @if($errors->any())
@@ -26,6 +26,13 @@
 
             <form action="{{ route('orders.store') }}" method="POST">
                 @csrf
+
+                <!-- Pass selected cart item indexes to controller -->
+                @if(isset($selectedIndexes))
+                    @foreach($selectedIndexes as $index)
+                        <input type="hidden" name="selected_indexes[]" value="{{ $index }}">
+                    @endforeach
+                @endif
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     
@@ -46,10 +53,10 @@
                                 <!-- Delivery Zone -->
                                 <div>
                                     <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Delivery Zone *</label>
-                                    <select name="delivery_zone_id" required class="w-full rounded-xl border border-slate-200 text-sm focus:ring-green-500 focus:border-green-500">
-                                        <option value="" disabled selected>Select Your Zone</option>
+                                    <select name="delivery_zone_id" id="delivery-zone-select" required class="w-full rounded-xl border border-slate-200 text-sm focus:ring-green-500 focus:border-green-500">
+                                        <option value="" data-fee="0" disabled selected>Select Your Zone</option>
                                         @foreach($zones as $zone)
-                                            <option value="{{ $zone->id }}">
+                                            <option value="{{ $zone->id }}" data-fee="{{ $zone->delivery_fee ?? 0 }}">
                                                 {{ $zone->name ?? $zone->zone_name }} 
                                                 @if(isset($zone->delivery_fee))
                                                     (+ LKR {{ number_format($zone->delivery_fee, 2) }})
@@ -135,10 +142,21 @@
                                 @endforeach
                             </div>
 
-                            <div class="border-t border-slate-100 pt-4 space-y-2 text-sm">
-                                <div class="flex justify-between font-bold text-base text-slate-800">
+                            <!-- Subtotal element with data-subtotal attribute for JS access -->
+                            <div class="border-t border-slate-100 pt-4 space-y-2 text-sm" id="order-summary-box" data-subtotal="{{ $subtotal }}">
+                                <div class="flex justify-between text-slate-600">
+                                    <span>Items Subtotal</span>
+                                    <span class="font-semibold text-slate-800">LKR {{ number_format($subtotal, 2) }}</span>
+                                </div>
+
+                                <div class="flex justify-between text-slate-600">
+                                    <span>Delivery Fee</span>
+                                    <span class="font-semibold text-slate-800" id="delivery-fee-display">LKR 0.00</span>
+                                </div>
+
+                                <div class="border-t border-slate-100 pt-3 flex justify-between font-bold text-base text-slate-800">
                                     <span>Total Amount</span>
-                                    <span class="text-green-600">LKR {{ number_format($subtotal, 2) }}</span>
+                                    <span class="text-green-600" id="grand-total-display">LKR {{ number_format($subtotal, 2) }}</span>
                                 </div>
                             </div>
 
@@ -156,4 +174,38 @@
 
         </div>
     </div>
+
+    <!-- Live Delivery Fee Calculation Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const orderSummaryBox = document.getElementById('order-summary-box');
+            const itemsSubtotal = orderSummaryBox ? parseFloat(orderSummaryBox.dataset.subtotal || 0) : 0;
+            
+            const zoneSelect = document.getElementById('delivery-zone-select');
+            const deliveryFeeDisplay = document.getElementById('delivery-fee-display');
+            const grandTotalDisplay = document.getElementById('grand-total-display');
+
+            if (zoneSelect) {
+                zoneSelect.addEventListener('change', function () {
+                    const selectedOption = this.options[this.selectedIndex];
+                    const deliveryFee = parseFloat(selectedOption.dataset.fee || 0);
+                    const grandTotal = itemsSubtotal + deliveryFee;
+
+                    if (deliveryFeeDisplay) {
+                        deliveryFeeDisplay.textContent = 'LKR ' + deliveryFee.toLocaleString('en-US', { 
+                            minimumFractionDigits: 2, 
+                            maximumFractionDigits: 2 
+                        });
+                    }
+
+                    if (grandTotalDisplay) {
+                        grandTotalDisplay.textContent = 'LKR ' + grandTotal.toLocaleString('en-US', { 
+                            minimumFractionDigits: 2, 
+                            maximumFractionDigits: 2 
+                        });
+                    }
+                });
+            }
+        });
+    </script>
 </x-app-layout>

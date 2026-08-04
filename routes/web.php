@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth; 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\KitchenController;
@@ -22,22 +23,37 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Dashboard Redirection based on Role
+    Route::get('/dashboard', function () {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user(); 
+        $role = $user->role ?? 'customer';
+
+        return match ($role) {
+            'admin'    => redirect()->route('admin.orders'),
+            'kitchen'  => redirect()->route('kitchen.index'),
+            'delivery' => redirect()->route('delivery.index'),
+            default    => view('dashboard'), // Customer Dashboard
+        };
+    })->name('dashboard');
+
     // ----------------------------------------------------
     // 1. CUSTOMER ROUTES
     // ----------------------------------------------------
     Route::middleware('role:customer')->group(function () {
-        
-        Route::get('/dashboard', function () {
-            return view('dashboard');
-        })->name('dashboard');
 
         // Dynamic Menu Route
         Route::get('/menu', [OrderController::class, 'menu'])->name('menu');
 
-        // Product Customization Route
+        // Product Customization / Single Product Details Page
         Route::get('/build/{product}', function (ProductItem $product) {
             return view('build', ['product' => $product->load('ingredients')]);
         })->name('build');
+
+        // Alias for easy linking: route('products.show', $product) -> redirects to build page
+        Route::get('/menu/{product}', function (ProductItem $product) {
+            return redirect()->route('build', $product);
+        })->name('products.show');
 
         // Cart Management Routes
         Route::get('/cart', [OrderController::class, 'cart'])->name('cart');
@@ -50,10 +66,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
         Route::get('/orders', [OrderController::class, 'myOrders'])->name('orders.index');
         
-        // ⚠️ Cancel Route එක (GET, POST, PATCH තුනටම සහය දක්වයි)
+        // Cancel Order Route
         Route::match(['get', 'post', 'patch'], '/orders/{id}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
         
-        // Dynamic ID Route (සමස්ත /orders/{id} එක පහළින් තිබිය යුතුය)
+        // Dynamic Order ID View
         Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
     });
 
