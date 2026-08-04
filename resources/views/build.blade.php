@@ -4,7 +4,7 @@
             <h2 class="font-bold text-2xl text-slate-800 leading-tight">
                 {{ __('Custom Product Builder') }}
             </h2>
-            <a href="{{ route('menu') }}" class="text-xs font-bold text-slate-500 hover:text-slate-800 underline">
+            <a href="{{ route('menu') }}" class="inline-flex items-center text-xs font-bold text-slate-500 hover:text-slate-800 underline transition">
                 &larr; Back to Menu
             </a>
         </div>
