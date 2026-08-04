@@ -31,7 +31,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/profile', 'destroy')->name('profile.destroy');
     });
 
-    // Role-based Dashboard Redirection
+    // Role-based Dashboard Redirection (Accounts සියල්ල තමන්ගේ Dashboard එකට Redirect වේ)
     Route::get('/dashboard', function () {
         /** @var \App\Models\User|null $user */
         $user = Auth::user();
@@ -45,7 +45,7 @@ Route::middleware('auth')->group(function () {
     })->name('dashboard');
 
     // ====================================================
-    // 1. CUSTOMER ROUTES
+    // 1. CUSTOMER ROUTES (Order දැමීම සහ තමන්ගේ Orders බැලීම)
     // ====================================================
     Route::middleware('role:customer')->group(function () {
 
@@ -73,30 +73,30 @@ Route::middleware('auth')->group(function () {
             Route::get('/orders', 'myOrders')->name('orders.index');
             Route::get('/orders/{id}', 'show')->name('orders.show');
 
-            // Flexible Cancellation (GET, POST, PATCH routes support)
+            // Order Cancellation
             Route::match(['get', 'post', 'patch'], '/orders/{id}/cancel', 'cancel')->name('orders.cancel');
         });
     });
 
     // ====================================================
-    // 2. KITCHEN STAFF ROUTES
+    // 2. KITCHEN STAFF ROUTES (Customer Orders පිළියෙල කිරීම)
     // ====================================================
-    Route::middleware('role:kitchen')->prefix('kitchen')->name('kitchen.')->controller(KitchenController::class)->group(function () {
+    Route::middleware('role:kitchen,admin')->prefix('kitchen')->name('kitchen.')->controller(KitchenController::class)->group(function () {
         Route::get('/', 'index')->name('index');
-        Route::patch('/orders/{id}/status', 'updateStatus')->name('updateStatus');
-        Route::post('/ingredient/{ingredient}/toggle', 'toggleStock')->name('toggleStock');
+        Route::patch('/orders/{id}/status', 'updateStatus')->name('orders.updateStatus');
+        Route::match(['post', 'patch'], '/ingredients/{ingredient}/toggle', 'toggleStock')->name('ingredients.toggle');
     });
 
     // ====================================================
-    // 3. DELIVERY STAFF ROUTES
+    // 3. DELIVERY STAFF ROUTES (Kitchen එකෙන් Ready වූ Orders බාරදීම)
     // ====================================================
-    Route::middleware('role:delivery')->prefix('delivery')->name('delivery.')->controller(DeliveryController::class)->group(function () {
+    Route::middleware('role:delivery,admin')->prefix('delivery')->name('delivery.')->controller(DeliveryController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::patch('/{id}/status', 'updateStatus')->name('updateStatus');
     });
 
     // ====================================================
-    // 4. ADMIN ROUTES
+    // 4. ADMIN ROUTES (සියලුම Data සහ Ingredients පාලනය කිරීම)
     // ====================================================
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         

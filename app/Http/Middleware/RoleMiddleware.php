@@ -22,8 +22,14 @@ class RoleMiddleware
 
         $user = Auth::user();
 
-        // Abort with 403 if user role is not within allowed roles
-        if (! in_array($user->role, $roles)) {
+        // '|' (pipe) හෝ කමා වලින් වෙන් වී එන roles සියල්ල තනි Array එකකට එකතු කිරීම
+        $allowedRoles = [];
+        foreach ($roles as $role) {
+            $allowedRoles = array_merge($allowedRoles, explode('|', $role));
+        }
+
+        // පරිශීලකයාගේ role එක අවසර ලත් roles අතර නැත්නම් 403 ලබාදීම
+        if (! in_array($user->role, $allowedRoles)) {
             abort(403, 'Unauthorized access.');
         }
 

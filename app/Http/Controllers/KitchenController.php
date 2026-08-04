@@ -9,18 +9,31 @@ use Illuminate\Http\Request;
 class KitchenController extends Controller
 {
     /**
-     * Display kitchen orders dashboard.
+     * Display kitchen orders dashboard and ingredient stock status.
      */
     public function index()
     {
-        $orders = CustomerOrder::with(['items', 'user'])
-            ->whereIn('status', ['pending', 'preparing'])
+        // Kitchen එකට අදාළ Active Orders (Pending, Preparing, Ready)
+        $orders = CustomerOrder::with(['items.productItem', 'user'])
+            ->whereIn('status', ['pending', 'preparing', 'ready'])
             ->orderBy('created_at', 'asc')
             ->get();
 
+        // Ingredients සියල්ල ලබා ගැනීම
         $ingredients = Ingredient::all();
 
-        return view('kitchen.index', compact('orders', 'ingredients'));
+        // Dashboard Stats Counts
+        $pendingCount   = $orders->where('status', 'pending')->count();
+        $preparingCount = $orders->where('status', 'preparing')->count();
+        $readyCount     = $orders->where('status', 'ready')->count();
+
+        return view('kitchen.index', compact(
+            'orders', 
+            'ingredients', 
+            'pendingCount', 
+            'preparingCount', 
+            'readyCount'
+        ));
     }
 
     /**
@@ -35,7 +48,7 @@ class KitchenController extends Controller
         $order = CustomerOrder::findOrFail($id);
         $order->update(['status' => $validated['status']]);
 
-        return back()->with('message', 'Order status updated successfully.');
+        return back()->with('message', 'Order #' . $order->id . ' status updated to ' . strtoupper($validated['status']) . ' successfully.');
     }
 
     /**
