@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,6 +18,33 @@ class AuthenticatedSessionController extends Controller
     public function create(): View
     {
         return view('auth.login');
+    }
+
+    /**
+     * Quick Auto-Login Method (For quick role selection)
+     */
+    public function quickLogin(Request $request, string $role): RedirectResponse
+    {
+        // Database එකේ අදාළ Role එක තියෙන පළමු User ව සෙවීම
+        $user = User::where('role', $role)->first();
+
+        if (!$user) {
+            return back()->withErrors([
+                'email' => "Database එකේ {$role} role එක සහිත User කෙනෙක් හමු වූයේ නැත.",
+            ]);
+        }
+
+        // Direct Login වී Session එක Regenerate කිරීම
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        // Role එක අනුව Redirect කිරීම
+        return match ($user->role) {
+            'admin'    => redirect()->intended(route('admin.orders')),
+            'kitchen'  => redirect()->intended(route('kitchen.index')),
+            'delivery' => redirect()->intended(route('delivery.index')),
+            default    => redirect()->intended(route('dashboard')),
+        };
     }
 
     /**
@@ -45,10 +73,10 @@ class AuthenticatedSessionController extends Controller
 
         // 4. Role එක අනුව අදාළ Dashboard එකට Redirect කිරීම
         return match ($user->role) {
-            'admin' => redirect()->intended(route('admin.ingredients.index', absolute: false)),
-            'kitchen' => redirect()->intended('/kitchen'),
-            'delivery' => redirect()->intended('/delivery'),
-            default => redirect()->intended('/dashboard'),
+            'admin'    => redirect()->intended(route('admin.orders')),
+            'kitchen'  => redirect()->intended(route('kitchen.index')),
+            'delivery' => redirect()->intended(route('delivery.index')),
+            default    => redirect()->intended(route('dashboard')),
         };
     }
 

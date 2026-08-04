@@ -2,39 +2,71 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Delivery;
+use App\Models\CustomerOrder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class DeliveryController extends Controller
 {
+    /**
+     * Display the delivery dashboard with orders.
+     */
     public function index()
     {
-        $deliveries = Delivery::with(['order.user', 'order.deliveryZone'])
-            ->whereIn('delivery_status', ['unassigned', 'picked_up'])
+        // 1. Database එකේ තියෙන සියලුම Orders (Status ලිහිල් කර පරීක්ෂා කිරීමට)
+        // 'delivered' නොවන සියලුම Orders පෙන්නුම් කරයි
+        $orders = CustomerOrder::where('status', '!=', 'delivered')
+            ->latest()
             ->get();
 
-        return view('delivery.index', compact('deliveries'));
-    }
+        // 2. Completed Orders (Delivery History)
+        $historyOrders = CustomerOrder::where('status', 'delivered')
+            ->latest('updated_at')
+            ->take(30)
+            ->get();
 
-    public function updateStatus(Request $request, $id)
-    {
-        $request->validate([
-            'delivery_status' => 'required|in:unassigned,picked_up,delivered',
-        ]);
+        // 3. Stats Counts
+        $readyCount = CustomerOrder::whereIn('status', ['ready', 'preparing', 'pending'])->count();
+        $outForDeliveryCount = CustomerOrder::where('status', 'out_for_delivery')->count();
+        
+        $deliveredTodayCount = CustomerOrder::where('status', 'delivered')
+            ->whereDate('updated_at', today())
+            ->count();
 
-        $delivery = Delivery::findOrFail($id);
-        $delivery->update([
-            'delivery_status' => $request->delivery_status,
-            'delivered_at' => $request->delivery_status === 'delivered' ? now() : null,
-        ]);
-
-        // Keep the parent order's status in sync
-        if ($request->delivery_status === 'picked_up') {
-            $delivery->order->update(['status' => 'out_for_delivery']);
-        } elseif ($request->delivery_status === 'delivered') {
-            $delivery->order->update(['status' => 'delivered']);
+        // 4. Today Earnings Calculation
+        if (Schema::hasColumn('customer_orders', 'delivery_fee')) {
+            $todayEarnings = CustomerOrder::where('status', 'delivered')
+                ->whereDate('updated_at', today())
+                ->sum('delivery_fee');
+        } else {
+            $todayEarnings = $deliveredTodayCount * 350.00;
         }
 
-        return back()->with('message', 'Delivery status updated.');
+        return view('delivery.index', compact(
+            'orders', 
+            'historyOrders', 
+            'readyCount', 
+            'outForDeliveryCount', 
+            'deliveredTodayCount',
+            'todayEarnings'
+        ));
+    }
+
+    /**
+     * Update order delivery status.
+     */
+    public function updateStatus(Request $request, CustomerOrder $order)
+    {
+        $request->validate([
+            'status' => 'required|in:out_for_delivery,delivered',
+        ]);
+
+        $order->update([
+            'status' => $request->status,
+        ]);
+
+        $statusText = $request->status == 'out_for_delivery' ? 'Out for Delivery 🚚' : 'Delivered ✅';
+
+        return redirect()->back()->with('message', "Order #ORD-{$order->id} status updated to {$statusText}");
     }
 }

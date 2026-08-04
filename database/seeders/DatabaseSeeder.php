@@ -8,6 +8,7 @@ use App\Models\Ingredient;
 use App\Models\ProductItem;
 use App\Models\DeliveryZone;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
@@ -16,15 +17,23 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Run Role Seeder if exists
+        // 1. Spatie Roles සෑදීම (පද්ධතියට අත්‍යවශ්‍ය Roles සියල්ල මෙහිදී සැකසේ)
+        $roles = ['admin', 'kitchen', 'delivery', 'customer'];
+        foreach ($roles as $roleName) {
+            Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+        }
+
+        // 2. Run Role Seeder if exists
         if (class_exists(RoleSeeder::class)) {
             $this->call([
                 RoleSeeder::class,
             ]);
         }
 
-        // 2. Create Default System Users for Testing
-        User::firstOrCreate(
+        // 3. Create Default System Users for Testing & Assign Spatie Roles
+
+        // --- Admin User ---
+        $admin = User::firstOrCreate(
             ['email' => 'admin@bci.com'],
             [
                 'name' => 'System Admin',
@@ -32,8 +41,10 @@ class DatabaseSeeder extends Seeder
                 'role' => 'admin',
             ]
         );
+        $admin->assignRole('admin');
 
-        User::firstOrCreate(
+        // --- Kitchen User ---
+        $kitchen = User::firstOrCreate(
             ['email' => 'kitchen@bci.com'],
             [
                 'name' => 'Head Chef',
@@ -41,8 +52,10 @@ class DatabaseSeeder extends Seeder
                 'role' => 'kitchen',
             ]
         );
+        $kitchen->assignRole('kitchen');
 
-        User::firstOrCreate(
+        // --- Delivery User ---
+        $delivery = User::firstOrCreate(
             ['email' => 'delivery@bci.com'],
             [
                 'name' => 'Delivery Driver',
@@ -50,8 +63,10 @@ class DatabaseSeeder extends Seeder
                 'role' => 'delivery',
             ]
         );
+        $delivery->assignRole('delivery');
 
-        User::firstOrCreate(
+        // --- Customer User ---
+        $customer = User::firstOrCreate(
             ['email' => 'customer@bci.com'],
             [
                 'name' => 'John Doe',
@@ -59,8 +74,9 @@ class DatabaseSeeder extends Seeder
                 'role' => 'customer',
             ]
         );
+        $customer->assignRole('customer');
 
-        // 3. Create Sample Delivery Zones (Safe FirstOrCreate)
+        // 4. Create Sample Delivery Zones
         try {
             DeliveryZone::firstOrCreate(['name' => 'Zone A - Downtown']);
             DeliveryZone::firstOrCreate(['name' => 'Zone B - Suburbs']);
@@ -68,7 +84,7 @@ class DatabaseSeeder extends Seeder
             // Ignore if zone creation logic differs
         }
 
-        // 4. Run Product Seeder
+        // 5. Run Product Seeder
         if (class_exists(ProductSeeder::class)) {
             $this->call([
                 ProductSeeder::class,

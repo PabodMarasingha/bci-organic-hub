@@ -2,12 +2,14 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\KitchenController;
 use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\Admin\IngredientController;
 use App\Http\Controllers\Admin\OrderOverviewController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Models\ProductItem;
 
 /*
@@ -16,10 +18,25 @@ use App\Models\ProductItem;
 |--------------------------------------------------------------------------
 */
 
-// Home Page - Redirect to Login
+// 1. Home Page - Log වී නොමැති නම් Direct Login Interface එක පෙන්වයි
 Route::get('/', function () {
-    return redirect()->route('login');
+    if (!Auth::check()) {
+        return view('auth.login');
+    }
+    return redirect()->route('dashboard');
 });
+
+// 2. Direct GET Logout Route (Browser එකෙන් logout ගැසූ විට error එක නොපෙන්වීමට)
+Route::get('/logout', function (Request $request) {
+    Auth::logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    return redirect()->route('login');
+})->name('force.logout');
+
+// 3. Quick Auto-Login Route
+Route::get('/quick-login/{role}', [AuthenticatedSessionController::class, 'quickLogin'])->name('quick.login');
 
 // Authenticated Common Routes (All Logged-in Users)
 Route::middleware('auth')->group(function () {
@@ -31,7 +48,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/profile', 'destroy')->name('profile.destroy');
     });
 
-    // Role-based Dashboard Redirection (Accounts සියල්ල තමන්ගේ Dashboard එකට Redirect වේ)
+    // Role-based Dashboard Redirection
     Route::get('/dashboard', function () {
         /** @var \App\Models\User|null $user */
         $user = Auth::user();
@@ -45,7 +62,7 @@ Route::middleware('auth')->group(function () {
     })->name('dashboard');
 
     // ====================================================
-    // 1. CUSTOMER ROUTES (Order දැමීම සහ තමන්ගේ Orders බැලීම)
+    // 1. CUSTOMER ROUTES
     // ====================================================
     Route::middleware('role:customer')->group(function () {
 
@@ -79,7 +96,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // ====================================================
-    // 2. KITCHEN STAFF ROUTES (Customer Orders පිළියෙල කිරීම)
+    // 2. KITCHEN STAFF ROUTES
     // ====================================================
     Route::middleware('role:kitchen,admin')->prefix('kitchen')->name('kitchen.')->controller(KitchenController::class)->group(function () {
         Route::get('/', 'index')->name('index');
@@ -88,15 +105,15 @@ Route::middleware('auth')->group(function () {
     });
 
     // ====================================================
-    // 3. DELIVERY STAFF ROUTES (Kitchen එකෙන් Ready වූ Orders බාරදීම)
+    // 3. DELIVERY STAFF ROUTES
     // ====================================================
     Route::middleware('role:delivery,admin')->prefix('delivery')->name('delivery.')->controller(DeliveryController::class)->group(function () {
         Route::get('/', 'index')->name('index');
-        Route::patch('/{id}/status', 'updateStatus')->name('updateStatus');
+        Route::patch('/{order}/status', 'updateStatus')->name('updateStatus');
     });
 
     // ====================================================
-    // 4. ADMIN ROUTES (සියලුම Data සහ Ingredients පාලනය කිරීම)
+    // 4. ADMIN ROUTES
     // ====================================================
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         
