@@ -7,10 +7,13 @@ use Illuminate\Http\Request;
 
 class DeliveryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $deliveries = Delivery::with(['order.user', 'order.deliveryZone'])
             ->whereIn('delivery_status', ['unassigned', 'picked_up'])
+            ->whereHas('order', function ($query) use ($request) {
+                $query->where('delivery_zone_id', $request->user()->delivery_zone_id);
+            })
             ->get();
 
         return view('delivery.index', compact('deliveries'));
@@ -28,7 +31,6 @@ class DeliveryController extends Controller
             'delivered_at' => $request->delivery_status === 'delivered' ? now() : null,
         ]);
 
-        // Keep the parent order's status in sync
         if ($request->delivery_status === 'picked_up') {
             $delivery->order->update(['status' => 'out_for_delivery']);
         } elseif ($request->delivery_status === 'delivered') {

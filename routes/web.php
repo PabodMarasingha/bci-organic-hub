@@ -56,6 +56,9 @@ Route::prefix('admin')->group(function () {
     Route::post('/ingredients', [\App\Http\Controllers\Admin\IngredientController::class, 'store'])->name('admin.ingredients.store');
     Route::delete('/ingredients/{ingredient}', [\App\Http\Controllers\Admin\IngredientController::class, 'destroy'])->name('admin.ingredients.destroy');
     Route::get('/orders', [\App\Http\Controllers\Admin\OrderOverviewController::class, 'index'])->name('admin.orders');
+    Route::get('/staff', [\App\Http\Controllers\Admin\StaffController::class, 'index'])->name('admin.staff');
+    Route::post('/staff', [\App\Http\Controllers\Admin\StaffController::class, 'store'])->name('admin.staff.store');
+    Route::delete('/staff/{user}', [\App\Http\Controllers\Admin\StaffController::class, 'destroy'])->name('admin.staff.destroy');
 });
 });
 

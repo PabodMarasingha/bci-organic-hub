@@ -47,6 +47,9 @@
                         <x-nav-link :href="route('admin.ingredients')" :active="request()->routeIs('admin.ingredients')">
                             {{ __('Ingredients') }}
                         </x-nav-link>
+                        <x-nav-link :href="route('admin.staff')" :active="request()->routeIs('admin.staff')">
+                            {{ __('Staff') }}
+                        </x-nav-link>
                     @endif
                 </div>
             </div>
@@ -134,6 +137,9 @@
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.ingredients')" :active="request()->routeIs('admin.ingredients')">
                     {{ __('Ingredients') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.staff')" :active="request()->routeIs('admin.staff')">
+                    {{ __('Staff') }}
                 </x-responsive-nav-link>
             @endif
         </div>
