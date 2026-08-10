@@ -22,6 +22,11 @@
                         </x-nav-link>
                         <x-nav-link :href="route('cart')" :active="request()->routeIs('cart')">
                             {{ __('Cart') }}
+                            @if (count(session('cart', [])) > 0)
+                                <span class="ml-1 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                    {{ count(session('cart', [])) }}
+                                </span>
+                            @endif
                         </x-nav-link>
                         <x-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.index') || request()->routeIs('orders.show')">
                             {{ __('My Orders') }}
@@ -29,14 +34,26 @@
                     @endif
 
                     @if (auth()->user()->hasRole('kitchen'))
+                        @php $pendingCount = \App\Models\CustomerOrder::whereIn('status', ['pending', 'preparing'])->count(); @endphp
                         <x-nav-link :href="route('kitchen.index')" :active="request()->routeIs('kitchen.index')">
                             {{ __('Kitchen') }}
+                            @if ($pendingCount > 0)
+                                <span class="ml-1 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $pendingCount }}</span>
+                            @endif
                         </x-nav-link>
                     @endif
 
                     @if (auth()->user()->hasRole('delivery'))
+                        @php
+                            $myDeliveryCount = \App\Models\Delivery::whereIn('delivery_status', ['unassigned', 'picked_up'])
+                                ->whereHas('order', fn($q) => $q->where('delivery_zone_id', auth()->user()->delivery_zone_id))
+                                ->count();
+                        @endphp
                         <x-nav-link :href="route('delivery.index')" :active="request()->routeIs('delivery.index')">
                             {{ __('Delivery') }}
+                            @if ($myDeliveryCount > 0)
+                                <span class="ml-1 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $myDeliveryCount }}</span>
+                            @endif
                         </x-nav-link>
                     @endif
 
@@ -113,6 +130,11 @@
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('cart')" :active="request()->routeIs('cart')">
                     {{ __('Cart') }}
+                    @if (count(session('cart', [])) > 0)
+                        <span class="ml-1 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                            {{ count(session('cart', [])) }}
+                        </span>
+                    @endif
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.index') || request()->routeIs('orders.show')">
                     {{ __('My Orders') }}
@@ -120,14 +142,26 @@
             @endif
 
             @if (auth()->user()->hasRole('kitchen'))
+                @php $pendingCountMobile = \App\Models\CustomerOrder::whereIn('status', ['pending', 'preparing'])->count(); @endphp
                 <x-responsive-nav-link :href="route('kitchen.index')" :active="request()->routeIs('kitchen.index')">
                     {{ __('Kitchen') }}
+                    @if ($pendingCountMobile > 0)
+                        <span class="ml-1 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $pendingCountMobile }}</span>
+                    @endif
                 </x-responsive-nav-link>
             @endif
 
             @if (auth()->user()->hasRole('delivery'))
+                @php
+                    $myDeliveryCountMobile = \App\Models\Delivery::whereIn('delivery_status', ['unassigned', 'picked_up'])
+                        ->whereHas('order', fn($q) => $q->where('delivery_zone_id', auth()->user()->delivery_zone_id))
+                        ->count();
+                @endphp
                 <x-responsive-nav-link :href="route('delivery.index')" :active="request()->routeIs('delivery.index')">
                     {{ __('Delivery') }}
+                    @if ($myDeliveryCountMobile > 0)
+                        <span class="ml-1 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $myDeliveryCountMobile }}</span>
+                    @endif
                 </x-responsive-nav-link>
             @endif
 
