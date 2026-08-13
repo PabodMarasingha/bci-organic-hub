@@ -67,7 +67,19 @@ new class extends Component
     <h2 class="text-2xl font-bold mb-4">{{ $product->name }}</h2>
 
     @if (session()->has('message'))
-        <div class="bg-green-100 text-green-800 p-2 rounded mb-4">{{ session('message') }}</div>
+        <div
+            x-data="{ show: true }"
+            x-init="setTimeout(() => show = false, 5000)"
+            x-show="show"
+            x-transition
+            class="fixed bottom-6 right-6 bg-green-600 text-white px-5 py-4 rounded-lg shadow-lg flex items-center gap-4 z-50"
+        >
+            <span>{{ session('message') }}</span>
+            <a href="{{ route('cart') }}" class="bg-white text-green-700 font-semibold px-3 py-1 rounded hover:bg-gray-100">
+                Go to Cart
+            </a>
+            <button @click="show = false" class="text-white hover:text-gray-200">✕</button>
+        </div>
     @endif
 
     @foreach ($ingredientsByType as $type => $ingredients)
