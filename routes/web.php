@@ -14,6 +14,7 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+// Default Dashboard Route (Customer හෝ General Users සඳහා)
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -47,6 +48,7 @@ Route::middleware('auth')->group(function () {
     // Kitchen-only Routes
     Route::middleware('role:kitchen')->group(function () {
         Route::get('/kitchen', [KitchenController::class, 'index'])->name('kitchen.index');
+        Route::get('/kitchen/dashboard', [KitchenController::class, 'index'])->name('kitchen.dashboard'); // Login Redirect එක සඳහා
         Route::patch('/kitchen/orders/{id}/status', [KitchenController::class, 'updateStatus'])->name('kitchen.updateStatus');
         Route::post('/kitchen/ingredient/{ingredient}/toggle', [KitchenController::class, 'toggleStock'])->name('kitchen.toggleStock');
     });
@@ -54,11 +56,15 @@ Route::middleware('auth')->group(function () {
     // Delivery-only Routes
     Route::middleware('role:delivery')->group(function () {
         Route::get('/delivery', [DeliveryController::class, 'index'])->name('delivery.index');
+        Route::get('/delivery/dashboard', [DeliveryController::class, 'index'])->name('delivery.dashboard'); // Login Redirect එක සඳහා
         Route::patch('/delivery/{id}/status', [DeliveryController::class, 'updateStatus'])->name('delivery.updateStatus');
     });
 
     // Admin-only Routes
     Route::middleware('role:admin')->prefix('admin')->group(function () {
+        // Login Redirect එක සඳහා Admin Dashboard එක Ingredients හෝ Orders වෙත යොමු කෙරේ
+        Route::get('/dashboard', [\App\Http\Controllers\Admin\OrderOverviewController::class, 'index'])->name('admin.dashboard');
+        
         Route::get('/ingredients', [\App\Http\Controllers\Admin\IngredientController::class, 'index'])->name('admin.ingredients');
         Route::post('/ingredients', [\App\Http\Controllers\Admin\IngredientController::class, 'store'])->name('admin.ingredients.store');
         Route::delete('/ingredients/{ingredient}', [\App\Http\Controllers\Admin\IngredientController::class, 'destroy'])->name('admin.ingredients.destroy');

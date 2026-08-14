@@ -24,11 +24,36 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        // 1. Form එකෙන් එන Request එක (Role, Email, Password) Validate & Authenticate කිරීම
+        $request->validate([
+            'role' => ['required', 'string'],
+        ]);
+
         $request->authenticate();
 
+        $user = Auth::user();
+
+        // 2. Select කරපු Role එක DB එකේ user ගේ සැබෑ Role එකට සමානදැයි බලයි
+        if ($request->filled('role') && $user->role !== $request->role) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()->withErrors([
+                'role' => 'The selected role does not match this account.',
+            ])->onlyInput('email');
+        }
+
+        // 3. Session Regenerate කිරීම
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // 4. User ගේ Role එක අනුව අදාළ Dashboard එකට Redirect කිරීම
+        return match ($user->role) {
+            'admin'    => redirect()->route('admin.dashboard'),
+            'kitchen'  => redirect()->route('kitchen.dashboard'),
+            'delivery' => redirect()->route('delivery.dashboard'),
+            default    => redirect()->intended(route('dashboard', absolute: false)),
+        };
     }
 
     /**
