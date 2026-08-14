@@ -23,6 +23,9 @@ class User extends Authenticatable
         'email',
         'password',
         'delivery_zone_id',
+        'phone',    
+        'address',  
+        'avatar',   
     ];
 
     /**
@@ -48,6 +51,9 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Delivery Zone Relationship
+     */
     public function deliveryZone()
     {
         return $this->belongsTo(DeliveryZone::class);

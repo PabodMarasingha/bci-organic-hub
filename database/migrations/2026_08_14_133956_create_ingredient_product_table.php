@@ -11,13 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ingredients', function (Blueprint $table) {
+        Schema::create('ingredient_product', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->enum('type', ['salad_base', 'topping', 'juice_base', 'fruit'])->default('topping');
-            $table->integer('calories')->default(0);
-            $table->decimal('price', 8, 2)->default(0.00);
-            $table->boolean('in_stock')->default(true);
             $table->timestamps();
         });
     }
@@ -27,6 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('ingredients');
+        Schema::dropIfExists('ingredient_product');
     }
 };

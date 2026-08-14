@@ -1,7 +1,6 @@
 <x-guest-layout>
     <!-- Custom CSS Animations for Top-to-Bottom Border Glow Beam -->
     <style>
-        /* Top-to-Bottom Symmetrical Border Glow Animation */
         @keyframes flowBeam {
             0% { stroke-dashoffset: 1200; }
             100% { stroke-dashoffset: 0; }
@@ -13,13 +12,13 @@
         }
     </style>
 
-    <!-- Main Container with Clean Deep Dark Background -->
+    <!-- Main Container -->
     <div class="relative min-h-screen flex flex-col justify-center items-center bg-[#05070c] px-4 sm:px-6 py-12 overflow-hidden selection:bg-emerald-500 selection:text-white">
         
         <!-- Interactive Floating Dust Particles Canvas Layer -->
         <canvas id="particles-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-0"></canvas>
 
-        <!-- Ambient Deep Glows (Soft Background Lighting) -->
+        <!-- Ambient Deep Glows -->
         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-emerald-500/10 rounded-full blur-[150px] pointer-events-none z-0"></div>
         <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-teal-500/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
 
@@ -34,7 +33,6 @@
         <!-- Card Wrapper with SVG Dynamic Border Overlay -->
         <div class="relative z-10 w-full max-w-md">
             
-            <!-- Animated SVG Dual Border Light Overlay -->
             <svg class="absolute -inset-[2px] w-[calc(100%+4px)] h-[calc(100%+4px)] pointer-events-none z-20" viewBox="0 0 448 640" preserveAspectRatio="none">
                 <defs>
                     <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -51,10 +49,8 @@
                     </filter>
                 </defs>
 
-                <!-- Static Base Frame -->
                 <rect x="1" y="1" width="446" height="638" rx="16" ry="16" fill="none" stroke="#1e293b" stroke-width="1.5" />
 
-                <!-- Left Path: Top Center -> Bottom Center -->
                 <path d="M 224 1 L 16 1 A 15 15 0 0 0 1 16 L 1 624 A 15 15 0 0 0 16 639 L 224 639" 
                       fill="none" 
                       stroke="url(#glowGrad)" 
@@ -64,7 +60,6 @@
                       pathLength="1200"
                       class="animated-path" />
 
-                <!-- Right Path: Top Center -> Bottom Center -->
                 <path d="M 224 1 L 432 1 A 15 15 0 0 1 447 16 L 447 624 A 15 15 0 0 1 432 639 L 224 639" 
                       fill="none" 
                       stroke="url(#glowGrad)" 
@@ -119,7 +114,6 @@
                     </button>
                 </form>
 
-                <!-- Already Registered / Login Link -->
                 <p class="text-xs text-slate-400 mt-6 text-center">
                     Already registered? 
                     <a href="{{ route('login') }}" class="text-emerald-400 font-bold hover:text-emerald-300 hover:underline transition ml-1">Log in</a>
