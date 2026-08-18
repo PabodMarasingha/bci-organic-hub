@@ -34,9 +34,11 @@
                         <input type="file" id="avatar-input" name="avatar" accept="image/*" class="hidden" onchange="previewAndSubmitAvatar(this)">
                     </div>
 
+                    <!-- Dynamic Role Badge -->
                     <span class="inline-block px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold rounded-full uppercase tracking-wider mb-2">
-                        Customer Profile
+                        {{ strtoupper(auth()->user()->getRoleNames()->first() ?? 'USER') }} PROFILE
                     </span>
+
                     <h1 class="text-3xl font-extrabold text-white tracking-tight">{{ auth()->user()->name }}</h1>
                     <p class="text-slate-400 text-sm font-medium mt-0.5">{{ auth()->user()->email }}</p>
                 </form>

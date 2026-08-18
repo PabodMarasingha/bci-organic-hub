@@ -19,11 +19,20 @@ class ProductBuilder extends Component
     public int $quantity = 1;
     public string $specialInstructions = '';
 
-    public function mount(ProductItem $product): void
+    /**
+     * Component mount method.
+     *
+     * @param \App\Models\ProductItem|string|int $product
+     * @return void
+     */
+    public function mount($product): void
     {
-        $this->product = $product;
+        if ($product instanceof ProductItem) {
+            $this->product = $product;
+        } else {
+            $this->product = ProductItem::findOrFail($product);
+        }
         
-        // Auto select සම්පූර්ණයෙන්ම ඉවත් කර ඇත (Clean Start)
         $this->selectedIngredients = [];
         $this->selectAll = false;
 
@@ -57,7 +66,6 @@ class ProductBuilder extends Component
             ->map(fn($id) => (string) $id)
             ->toArray();
         
-        // සියලුම Ingredients තනි තනියම select කළහොත් "Select All" checkbox එක auto-check වේ
         $this->selectAll = count($this->selectedIngredients) === count($allIds) && count($allIds) > 0;
 
         $this->calculateTotals();
@@ -97,9 +105,10 @@ class ProductBuilder extends Component
      */
     private function getAvailableIngredients(): Collection
     {
+        // in_stock column එක නොමැති නිසා directly සියලුම ingredients ලබා ගනී
         return $this->product->ingredients()->exists() 
-            ? $this->product->ingredients()->where('in_stock', true)->get() 
-            : Ingredient::where('in_stock', true)->get();
+            ? $this->product->ingredients()->get() 
+            : Ingredient::all();
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\DeliveryZone;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,12 +14,13 @@ use Illuminate\View\View;
 class ProfileController extends Controller
 {
     /**
-     * Display the user's profile form.
+     * Display the user's profile form with delivery zones.
      */
     public function edit(Request $request): View
     {
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user'  => $request->user(),
+            'zones' => DeliveryZone::all(),
         ]);
     }
 
@@ -29,19 +31,26 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        // Validate extra fields
+        // Validate extra fields (including driver and customer details)
         $extraData = $request->validate([
-            'phone' => ['nullable', 'string', 'max:20'],
-            'address' => ['nullable', 'string', 'max:500'],
-            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+            'phone_number'     => ['nullable', 'string', 'max:20'],
+            'phone'            => ['nullable', 'string', 'max:20'], // Fallback compatibility
+            'address'          => ['nullable', 'string', 'max:500'],
+            'delivery_zone_id' => ['nullable', 'exists:delivery_zones,id'],
+            'vehicle_type'     => ['nullable', 'string', 'max:100'],
+            'vehicle_number'   => ['nullable', 'string', 'max:100'],
+            'avatar'           => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ]);
 
         // Fill standard validated data (name, email)
         $user->fill($request->validated());
 
-        // Fill extra data (phone, address)
-        $user->phone = $extraData['phone'] ?? $user->phone;
-        $user->address = $extraData['address'] ?? $user->address;
+        // Fill extra data
+        $user->phone_number     = $extraData['phone_number'] ?? $extraData['phone'] ?? $user->phone_number;
+        $user->address          = $extraData['address'] ?? $user->address;
+        $user->delivery_zone_id = $extraData['delivery_zone_id'] ?? $user->delivery_zone_id;
+        $user->vehicle_type     = $extraData['vehicle_type'] ?? $user->vehicle_type;
+        $user->vehicle_number   = $extraData['vehicle_number'] ?? $user->vehicle_number;
 
         // Handle Profile Image Upload
         if ($request->hasFile('avatar')) {

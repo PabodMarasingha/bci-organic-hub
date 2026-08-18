@@ -11,13 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::dropIfExists('ingredients');
+
         Schema::create('ingredients', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->enum('type', ['salad_base', 'topping', 'juice_base', 'fruit'])->default('topping');
+            $table->string('type'); // ENUM වෙනුවට String භාවිත කර ඇත
             $table->integer('calories')->default(0);
             $table->decimal('price', 8, 2)->default(0.00);
-            $table->boolean('in_stock')->default(true);
+            $table->integer('quantity')->default(20); // Low stock පරීක්ෂාව සඳහා quantity එකතු කරන ලදී
+            $table->boolean('is_available')->default(true);
             $table->timestamps();
         });
     }

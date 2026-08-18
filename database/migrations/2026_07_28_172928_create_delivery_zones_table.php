@@ -10,13 +10,15 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-    {
-        Schema::create('delivery_zones', function (Blueprint $table) {
-    $table->id();
-    $table->string('name');
-    $table->timestamps();
-});
-    }
+{
+    Schema::create('delivery_zones', function (Blueprint $table) {
+        $table->id();
+        $table->string('name'); // e.g. Zone A - Colombo 03
+        $table->decimal('fee', 8, 2)->default(0.00); // Delivery Fee
+        $table->boolean('is_active')->default(true);
+        $table->timestamps();
+    });
+}
 
     /**
      * Reverse the migrations.

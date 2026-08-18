@@ -2,52 +2,77 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CustomerOrder; 
+use App\Models\CustomerOrder;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $userId = Auth::id();
+        /** @var User|null $user */
+        $user = Auth::user();
 
-        // Active order statuses
+        // Safety Check: User ලොග් වී නැත්නම් Login පිටුවට යොමු කිරීම
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        // ==========================================
+        // 1. Role එක අනුව Smart Auto-Redirect Logics
+        // ==========================================
+
+        if ($user->hasAnyRole(['admin', 'Admin'])) {
+            return redirect()->route('admin.dashboard');
+        }
+
+        if ($user->hasAnyRole(['kitchen', 'Kitchen Staff', 'staff'])) {
+            return redirect()->route('staff.dashboard');
+        }
+
+        if ($user->hasAnyRole(['delivery', 'Delivery Staff'])) {
+            return redirect()->route('delivery.dashboard');
+        }
+
+        // ==========================================
+        // 2. Customer සඳහා Data Prep
+        // ==========================================
+
+        $userId = $user->id;
         $activeStatuses = ['pending', 'preparing', 'ready', 'on_delivery', 'processing'];
 
-        // Base query using CustomerOrder model
+        // Base Query
         $ordersQuery = CustomerOrder::where('user_id', $userId);
 
-        // 1. Total Orders Count
+        // Total Orders Count
         $totalOrdersCount = (clone $ordersQuery)->count();
 
-        // 2. Active Orders Query (Case-insensitive status matching)
-        $activeQuery = (clone $ordersQuery)->where(function ($query) use ($activeStatuses) {
-            foreach ($activeStatuses as $status) {
-                $query->orWhereRaw('LOWER(status) = ?', [strtolower($status)]);
-            }
-        });
+        // Active Orders Query (Cleaner Case-insensitive matching)
+        $activeQuery = (clone $ordersQuery)->whereIn(DB::raw('LOWER(status)'), $activeStatuses);
 
         // Active Orders Count
         $activeOrdersCount = (clone $activeQuery)->count();
 
-        // 3. Latest Active Order
+        // Latest Active Order
         $latestActiveOrder = (clone $activeQuery)
             ->orderBy('id', 'desc')
             ->first();
 
-        // 4. Recent 5 Orders 
+        // Recent 5 Orders
         $recentOrders = (clone $ordersQuery)
             ->with('items')
             ->orderBy('id', 'desc')
             ->take(5)
             ->get();
 
-        // 5. Cart count from session
+        // Cart Item Count from Session
         $cart = session()->get('cart', []);
         $cartCount = is_array($cart) ? count($cart) : 0;
 
-        return view('dashboard', compact(
+        return view('customers.dashboard', compact(
+            'user',
             'totalOrdersCount',
             'activeOrdersCount',
             'latestActiveOrder',

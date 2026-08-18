@@ -12,6 +12,9 @@
         }
     </style>
 
+    <!-- Alpine.js CDN for Dynamic Role Toggle -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
     <!-- Main Container -->
     <div class="relative min-h-screen flex flex-col justify-center items-center bg-[#05070c] px-4 sm:px-6 py-12 overflow-hidden selection:bg-emerald-500 selection:text-white">
         
@@ -31,9 +34,9 @@
         </div>
 
         <!-- Card Wrapper with SVG Dynamic Border Overlay -->
-        <div class="relative z-10 w-full max-w-md">
+        <div class="relative z-10 w-full max-w-md" x-data="{ selectedRole: '{{ old('role', '') }}' }">
             
-            <svg class="absolute -inset-[2px] w-[calc(100%+4px)] h-[calc(100%+4px)] pointer-events-none z-20" viewBox="0 0 448 640" preserveAspectRatio="none">
+            <svg class="absolute -inset-[2px] w-[calc(100%+4px)] h-[calc(100%+4px)] pointer-events-none z-20" viewBox="0 0 448 740" preserveAspectRatio="none">
                 <defs>
                     <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stop-color="#34d399" />
@@ -49,9 +52,9 @@
                     </filter>
                 </defs>
 
-                <rect x="1" y="1" width="446" height="638" rx="16" ry="16" fill="none" stroke="#1e293b" stroke-width="1.5" />
+                <rect x="1" y="1" width="446" height="738" rx="16" ry="16" fill="none" stroke="#1e293b" stroke-width="1.5" />
 
-                <path d="M 224 1 L 16 1 A 15 15 0 0 0 1 16 L 1 624 A 15 15 0 0 0 16 639 L 224 639" 
+                <path d="M 224 1 L 16 1 A 15 15 0 0 0 1 16 L 1 724 A 15 15 0 0 0 16 739 L 224 739" 
                       fill="none" 
                       stroke="url(#glowGrad)" 
                       stroke-width="3" 
@@ -60,7 +63,7 @@
                       pathLength="1200"
                       class="animated-path" />
 
-                <path d="M 224 1 L 432 1 A 15 15 0 0 1 447 16 L 447 624 A 15 15 0 0 1 432 639 L 224 639" 
+                <path d="M 224 1 L 432 1 A 15 15 0 0 1 447 16 L 447 724 A 15 15 0 0 1 432 739 L 224 739" 
                       fill="none" 
                       stroke="url(#glowGrad)" 
                       stroke-width="3" 
@@ -75,6 +78,20 @@
                 
                 <form method="POST" action="{{ route('register') }}">
                     @csrf
+
+                    <!-- Select Role Field (x-model added) -->
+                    <div class="mb-4">
+                        <label for="role" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Select Role</label>
+                        <select id="role" name="role" x-model="selectedRole" required 
+                            class="w-full bg-[#141a26] border border-slate-700/70 text-slate-100 text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 block p-3.5 transition duration-200 outline-none cursor-pointer">
+                            <option value="" disabled selected class="bg-[#0b0f19] text-slate-500">Select Your Role</option>
+                            <option value="customer" class="bg-[#0b0f19] text-slate-100">Customer / Student</option>
+                            <option value="staff" class="bg-[#0b0f19] text-slate-100">Kitchen Staff</option>
+                            <option value="delivery" class="bg-[#0b0f19] text-slate-100">Delivery Staff</option>
+                            <option value="admin" class="bg-[#0b0f19] text-slate-100">Admin</option>
+                        </select>
+                        <x-input-error :messages="$errors->get('role')" class="mt-1.5 text-red-400 text-xs" />
+                    </div>
 
                     <!-- Name -->
                     <div class="mb-4">
@@ -101,11 +118,64 @@
                     </div>
 
                     <!-- Confirm Password -->
-                    <div class="mb-6">
+                    <div class="mb-4">
                         <label for="password_confirmation" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Confirm Password</label>
                         <input id="password_confirmation" type="password" name="password_confirmation" required autocomplete="new-password" placeholder="••••••••" 
                             class="w-full bg-[#141a26] border border-slate-700/70 text-slate-100 text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 block p-3.5 transition duration-200 outline-none placeholder:text-slate-600">
                         <x-input-error :messages="$errors->get('password_confirmation')" class="mt-1.5 text-red-400 text-xs" />
+                    </div>
+
+                    <!-- Dynamic Delivery Specific Fields (Only visible when role is 'delivery') -->
+                    <div x-show="selectedRole === 'delivery'" 
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 transform -translate-y-2"
+                         x-transition:enter-end="opacity-100 transform translate-y-0"
+                         x-transition:leave="transition ease-in duration-200"
+                         x-transition:leave-start="opacity-100 transform translate-y-0"
+                         x-transition:leave-end="opacity-0 transform -translate-y-2"
+                         class="space-y-4 pt-2 mb-6 border-t border-slate-800/80">
+
+                        <p class="text-[10px] font-bold tracking-widest text-emerald-400 uppercase">Delivery Details</p>
+
+                        <!-- Phone Number -->
+                        <div>
+                            <label for="phone_number" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Phone Number</label>
+                            <input id="phone_number" type="text" name="phone_number" value="{{ old('phone_number') }}" placeholder="0715285369" 
+                                class="w-full bg-[#141a26] border border-slate-700/70 text-slate-100 text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 block p-3.5 transition duration-200 outline-none placeholder:text-slate-600">
+                            <x-input-error :messages="$errors->get('phone_number')" class="mt-1.5 text-red-400 text-xs" />
+                        </div>
+
+                        <!-- Delivery Zone -->
+                        <div>
+                            <label for="delivery_zone_id" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Delivery Zone</label>
+                            <select id="delivery_zone_id" name="delivery_zone_id" 
+                                class="w-full bg-[#141a26] border border-slate-700/70 text-slate-100 text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 block p-3.5 transition duration-200 outline-none cursor-pointer">
+                                <option value="" disabled selected class="bg-[#0b0f19] text-slate-500">Select Zone</option>
+                                @foreach($deliveryZones ?? [] as $zone)
+                                    <option value="{{ $zone->id }}" class="bg-[#0b0f19] text-slate-100" {{ old('delivery_zone_id') == $zone->id ? 'selected' : '' }}>
+                                        {{ $zone->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('delivery_zone_id')" class="mt-1.5 text-red-400 text-xs" />
+                        </div>
+
+                        <!-- Vehicle Type & Vehicle Number Grid -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label for="vehicle_type" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Vehicle Type</label>
+                                <input id="vehicle_type" type="text" name="vehicle_type" value="{{ old('vehicle_type') }}" placeholder="bike / scooter" 
+                                    class="w-full bg-[#141a26] border border-slate-700/70 text-slate-100 text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 block p-3.5 transition duration-200 outline-none placeholder:text-slate-600">
+                                <x-input-error :messages="$errors->get('vehicle_type')" class="mt-1.5 text-red-400 text-xs" />
+                            </div>
+
+                            <div>
+                                <label for="vehicle_number" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Vehicle Number</label>
+                                <input id="vehicle_number" type="text" name="vehicle_number" value="{{ old('vehicle_number') }}" placeholder="va-3569" 
+                                    class="w-full bg-[#141a26] border border-slate-700/70 text-slate-100 text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 block p-3.5 transition duration-200 outline-none placeholder:text-slate-600">
+                                <x-input-error :messages="$errors->get('vehicle_number')" class="mt-1.5 text-red-400 text-xs" />
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Submit Button -->

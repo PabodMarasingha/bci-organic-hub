@@ -25,7 +25,7 @@ class Checkout extends Component
     }
 
     /**
-     * Delivery Zone එක වෙනස් කළ විට delivery fee එක auto update වේ.
+     *
      */
     public function updatedDeliveryZone(mixed $value): void
     {
@@ -69,10 +69,10 @@ class Checkout extends Component
 
     public function render()
     {
-        // Database එකෙන් Delivery Zones ලබා ගැනීම
+       
         $deliveryZones = DeliveryZone::all();
 
-        // Database එක හිස් නම් UI එක කැඩී යාම වැළැක්වීමට fallback data එකක් ලබාදීම
+        
         if ($deliveryZones->isEmpty()) {
             $deliveryZones = collect([
                 (object)['id' => 1, 'name' => 'Main Academic Building', 'delivery_fee' => 0.00],

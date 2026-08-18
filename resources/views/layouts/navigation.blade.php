@@ -3,9 +3,37 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex items-center">
-                <!-- System Logo & Brand Name -->
+                
+                <!-- System Logo & Brand Name (Smart Dynamic Role Redirection) -->
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 group">
+                    @php
+                        $user = Auth::user();
+                        $homeRoute = route('dashboard');
+
+                        if ($user) {
+                            if ($user->hasRole('admin') || $user->role === 'admin') {
+                                $homeRoute = Route::has('admin.dashboard') ? route('admin.dashboard') : route('dashboard');
+                            } elseif ($user->hasAnyRole(['kitchen', 'Kitchen Staff', 'staff']) || in_array($user->role, ['kitchen', 'staff'])) {
+                                $homeRoute = Route::has('staff.dashboard') ? route('staff.dashboard') : route('dashboard');
+                            } elseif ($user->hasAnyRole(['delivery', 'Delivery Staff']) || in_array($user->role, ['delivery', 'delivery staff'])) {
+                                $homeRoute = Route::has('delivery.dashboard') ? route('delivery.dashboard') : (Route::has('delivery.index') ? route('delivery.index') : route('dashboard'));
+                            }
+                        }
+
+                        // Dynamic Ingredients Route Identification
+                        $ingredientsRoute = '#';
+                        if (Route::has('admin.ingredients')) {
+                            $ingredientsRoute = route('admin.ingredients');
+                        } elseif (Route::has('admin.ingredients.index')) {
+                            $ingredientsRoute = route('admin.ingredients.index');
+                        } elseif (Route::has('ingredients.index')) {
+                            $ingredientsRoute = route('ingredients.index');
+                        } elseif (Route::has('kitchen.index')) {
+                            $ingredientsRoute = route('kitchen.index');
+                        }
+                    @endphp
+
+                    <a href="{{ $homeRoute }}" class="flex items-center gap-3 group" title="Go to Dashboard">
                         <!-- Custom Organic Hub Icon -->
                         <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition duration-300">
                             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -24,36 +52,71 @@
                     </a>
                 </div>
 
-                <!-- Navigation Links with Underline Glow Animations -->
+                <!-- Desktop Navigation Links Dynamic by User Role -->
                 <div class="hidden space-x-2 sm:-my-px sm:ms-10 sm:flex items-center">
                     
-                    <!-- Dashboard Link -->
-                    <a href="{{ route('dashboard') }}" 
-                       class="relative px-4 py-2 text-xs font-bold transition-all duration-300 rounded-xl group {{ request()->routeIs('dashboard') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800/50' }}">
-                        Dashboard
-                        <span class="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-300 {{ request()->routeIs('dashboard') ? 'w-3/4 shadow-[0_0_10px_#10b981]' : 'w-0 group-hover:w-1/2' }}"></span>
-                    </a>
+                    {{-- ADMIN TABS --}}
+                    @if(Auth::check() && (Auth::user()->hasRole('admin') || Auth::user()->role === 'admin'))
+                        <a href="{{ Route::has('admin.dashboard') ? route('admin.dashboard') : route('dashboard') }}" 
+                           class="relative px-4 py-2 text-xs font-bold transition-all duration-300 rounded-xl group {{ request()->routeIs('admin.dashboard') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800/50' }}">
+                            Admin Overview
+                            <span class="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-300 {{ request()->routeIs('admin.dashboard') ? 'w-3/4 shadow-[0_0_10px_#10b981]' : 'w-0 group-hover:w-1/2' }}"></span>
+                        </a>
+                        <a href="{{ $ingredientsRoute }}" 
+                           class="relative px-4 py-2 text-xs font-bold transition-all duration-300 rounded-xl group {{ request()->routeIs('*ingredient*') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800/50' }}">
+                            Ingredients
+                            <span class="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-300 {{ request()->routeIs('*ingredient*') ? 'w-3/4 shadow-[0_0_10px_#10b981]' : 'w-0 group-hover:w-1/2' }}"></span>
+                        </a>
+                        <a href="{{ Route::has('admin.staff.index') ? route('admin.staff.index') : (Route::has('admin.staff') ? route('admin.staff') : '#') }}" 
+                           class="relative px-4 py-2 text-xs font-bold transition-all duration-300 rounded-xl group {{ request()->routeIs('*staff*') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800/50' }}">
+                            Staff Management
+                            <span class="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-300 {{ request()->routeIs('*staff*') ? 'w-3/4 shadow-[0_0_10px_#10b981]' : 'w-0 group-hover:w-1/2' }}"></span>
+                        </a>
 
-                    <!-- Menu Link -->
-                    <a href="{{ Route::has('menu') ? route('menu') : '#' }}" 
-                       class="relative px-4 py-2 text-xs font-bold transition-all duration-300 rounded-xl group {{ request()->routeIs('menu*') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800/50' }}">
-                        Menu
-                        <span class="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-300 {{ request()->routeIs('menu*') ? 'w-3/4 shadow-[0_0_10px_#10b981]' : 'w-0 group-hover:w-1/2' }}"></span>
-                    </a>
+                    {{-- KITCHEN / STAFF TABS --}}
+                    @elseif(Auth::check() && (Auth::user()->hasAnyRole(['kitchen', 'Kitchen Staff', 'staff']) || in_array(Auth::user()->role, ['kitchen', 'staff'])))
+                        <a href="{{ Route::has('staff.dashboard') ? route('staff.dashboard') : route('dashboard') }}" 
+                           class="relative px-4 py-2 text-xs font-bold transition-all duration-300 rounded-xl group {{ request()->routeIs('staff.dashboard') || request()->routeIs('kitchen*') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800/50' }}">
+                            Kitchen Orders
+                            <span class="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-300 {{ request()->routeIs('staff.dashboard') || request()->routeIs('kitchen*') ? 'w-3/4 shadow-[0_0_10px_#10b981]' : 'w-0 group-hover:w-1/2' }}"></span>
+                        </a>
 
-                    <!-- Cart Link -->
-                    <a href="{{ Route::has('cart') ? route('cart') : '#' }}" 
-                       class="relative px-4 py-2 text-xs font-bold transition-all duration-300 rounded-xl group {{ request()->routeIs('cart*') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800/50' }}">
-                        Cart
-                        <span class="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-300 {{ request()->routeIs('cart*') ? 'w-3/4 shadow-[0_0_10px_#10b981]' : 'w-0 group-hover:w-1/2' }}"></span>
-                    </a>
+                    {{-- DELIVERY STAFF TABS --}}
+                    @elseif(Auth::check() && (Auth::user()->hasAnyRole(['delivery', 'Delivery Staff']) || in_array(Auth::user()->role, ['delivery', 'delivery staff'])))
+                        <a href="{{ Route::has('delivery.dashboard') ? route('delivery.dashboard') : (Route::has('delivery.index') ? route('delivery.index') : '#') }}" 
+                           class="relative px-4 py-2 text-xs font-bold transition-all duration-300 rounded-xl group {{ request()->routeIs('delivery.dashboard') || request()->routeIs('delivery.index') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800/50' }}">
+                            Active Dispatches
+                            <span class="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-300 {{ request()->routeIs('delivery.dashboard') || request()->routeIs('delivery.index') ? 'w-3/4 shadow-[0_0_10px_#10b981]' : 'w-0 group-hover:w-1/2' }}"></span>
+                        </a>
+                        <a href="{{ Route::has('delivery.dailyLog') ? route('delivery.dailyLog') : '#' }}" 
+                           class="relative px-4 py-2 text-xs font-bold transition-all duration-300 rounded-xl group {{ request()->routeIs('delivery.dailyLog') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800/50' }}">
+                            Daily Log
+                            <span class="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-300 {{ request()->routeIs('delivery.dailyLog') ? 'w-3/4 shadow-[0_0_10px_#10b981]' : 'w-0 group-hover:w-1/2' }}"></span>
+                        </a>
 
-                    <!-- My Orders Link -->
-                    <a href="{{ Route::has('orders.index') ? route('orders.index') : '#' }}" 
-                       class="relative px-4 py-2 text-xs font-bold transition-all duration-300 rounded-xl group {{ request()->routeIs('orders*') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800/50' }}">
-                        My Orders
-                        <span class="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-300 {{ request()->routeIs('orders*') ? 'w-3/4 shadow-[0_0_10px_#10b981]' : 'w-0 group-hover:w-1/2' }}"></span>
-                    </a>
+                    {{-- CUSTOMER / DEFAULT TABS --}}
+                    @else
+                        <a href="{{ route('dashboard') }}" 
+                           class="relative px-4 py-2 text-xs font-bold transition-all duration-300 rounded-xl group {{ request()->routeIs('dashboard') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800/50' }}">
+                            Dashboard
+                            <span class="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-300 {{ request()->routeIs('dashboard') ? 'w-3/4 shadow-[0_0_10px_#10b981]' : 'w-0 group-hover:w-1/2' }}"></span>
+                        </a>
+                        <a href="{{ Route::has('menu') ? route('menu') : '#' }}" 
+                           class="relative px-4 py-2 text-xs font-bold transition-all duration-300 rounded-xl group {{ request()->routeIs('menu*') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800/50' }}">
+                            Menu
+                            <span class="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-300 {{ request()->routeIs('menu*') ? 'w-3/4 shadow-[0_0_10px_#10b981]' : 'w-0 group-hover:w-1/2' }}"></span>
+                        </a>
+                        <a href="{{ Route::has('cart') ? route('cart') : '#' }}" 
+                           class="relative px-4 py-2 text-xs font-bold transition-all duration-300 rounded-xl group {{ request()->routeIs('cart*') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800/50' }}">
+                            Cart
+                            <span class="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-300 {{ request()->routeIs('cart*') ? 'w-3/4 shadow-[0_0_10px_#10b981]' : 'w-0 group-hover:w-1/2' }}"></span>
+                        </a>
+                        <a href="{{ Route::has('orders.index') ? route('orders.index') : '#' }}" 
+                           class="relative px-4 py-2 text-xs font-bold transition-all duration-300 rounded-xl group {{ request()->routeIs('orders*') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white hover:bg-slate-800/50' }}">
+                            My Orders
+                            <span class="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-300 {{ request()->routeIs('orders*') ? 'w-3/4 shadow-[0_0_10px_#10b981]' : 'w-0 group-hover:w-1/2' }}"></span>
+                        </a>
+                    @endif
 
                 </div>
             </div>
@@ -65,7 +128,7 @@
                         <button class="inline-flex items-center px-4 py-2 text-xs font-bold rounded-xl text-slate-300 bg-[#141a26] border border-slate-800 hover:border-emerald-500/50 hover:text-emerald-400 transition duration-300 focus:outline-none">
                             <span class="flex items-center gap-2">
                                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                {{ Auth::user()->name }}
+                                {{ Auth::user()->name ?? 'User' }}
                             </span>
                             <svg class="ms-2 -me-0.5 h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
@@ -79,14 +142,13 @@
                                 {{ __('Profile') }}
                             </x-dropdown-link>
 
-                            <!-- Authentication -->
+                            <!-- Authentication Logout Form -->
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
-                                <x-dropdown-link :href="route('logout')"
-                                        onclick="event.preventDefault(); this.closest('form').submit();"
-                                        class="text-xs text-rose-400 hover:bg-rose-500/10 font-semibold">
+                                <button type="submit" 
+                                        class="w-full text-left px-4 py-2 text-xs text-rose-400 hover:bg-rose-500/10 font-semibold transition duration-150">
                                     {{ __('Log Out') }}
-                                </x-dropdown-link>
+                                </button>
                             </form>
                         </div>
                     </x-slot>
@@ -105,24 +167,45 @@
         </div>
     </div>
 
-    <!-- Responsive Mobile Menu -->
+    <!-- Responsive Mobile Menu Dynamic by Role -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden bg-[#0b0f19] border-b border-slate-800">
         <div class="pt-2 pb-3 space-y-1 px-4">
-            <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-lg text-xs font-bold {{ request()->routeIs('dashboard') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white' }}">Dashboard</a>
-            <a href="{{ Route::has('menu') ? route('menu') : '#' }}" class="block px-3 py-2 rounded-lg text-xs font-bold {{ request()->routeIs('menu*') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white' }}">Menu</a>
-            <a href="{{ Route::has('cart') ? route('cart') : '#' }}" class="block px-3 py-2 rounded-lg text-xs font-bold {{ request()->routeIs('cart*') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white' }}">Cart</a>
-            <a href="{{ Route::has('orders.index') ? route('orders.index') : '#' }}" class="block px-3 py-2 rounded-lg text-xs font-bold {{ request()->routeIs('orders*') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white' }}">My Orders</a>
+            
+            @if(Auth::check() && (Auth::user()->hasRole('admin') || Auth::user()->role === 'admin'))
+                <a href="{{ Route::has('admin.dashboard') ? route('admin.dashboard') : route('dashboard') }}" class="block px-3 py-2 rounded-lg text-xs font-bold {{ request()->routeIs('admin.dashboard') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white' }}">Admin Overview</a>
+                <a href="{{ $ingredientsRoute }}" class="block px-3 py-2 rounded-lg text-xs font-bold {{ request()->routeIs('*ingredient*') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white' }}">Ingredients</a>
+                <a href="{{ Route::has('admin.staff.index') ? route('admin.staff.index') : (Route::has('admin.staff') ? route('admin.staff') : '#') }}" class="block px-3 py-2 rounded-lg text-xs font-bold {{ request()->routeIs('*staff*') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white' }}">Staff Management</a>
+            
+            @elseif(Auth::check() && (Auth::user()->hasAnyRole(['kitchen', 'Kitchen Staff', 'staff']) || in_array(Auth::user()->role, ['kitchen', 'staff'])))
+                <a href="{{ Route::has('staff.dashboard') ? route('staff.dashboard') : route('dashboard') }}" class="block px-3 py-2 rounded-lg text-xs font-bold {{ request()->routeIs('staff.dashboard') || request()->routeIs('kitchen*') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white' }}">Kitchen Orders</a>
+            
+            @elseif(Auth::check() && (Auth::user()->hasAnyRole(['delivery', 'Delivery Staff']) || in_array(Auth::user()->role, ['delivery', 'delivery staff'])))
+                <a href="{{ Route::has('delivery.dashboard') ? route('delivery.dashboard') : (Route::has('delivery.index') ? route('delivery.index') : '#') }}" class="block px-3 py-2 rounded-lg text-xs font-bold {{ request()->routeIs('delivery.dashboard') || request()->routeIs('delivery.index') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white' }}">Active Dispatches</a>
+                <a href="{{ Route::has('delivery.dailyLog') ? route('delivery.dailyLog') : '#' }}" class="block px-3 py-2 rounded-lg text-xs font-bold {{ request()->routeIs('delivery.dailyLog') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white' }}">Daily Log</a>
+            
+            @else
+                <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-lg text-xs font-bold {{ request()->routeIs('dashboard') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white' }}">Dashboard</a>
+                <a href="{{ Route::has('menu') ? route('menu') : '#' }}" class="block px-3 py-2 rounded-lg text-xs font-bold {{ request()->routeIs('menu*') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white' }}">Menu</a>
+                <a href="{{ Route::has('cart') ? route('cart') : '#' }}" class="block px-3 py-2 rounded-lg text-xs font-bold {{ request()->routeIs('cart*') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white' }}">Cart</a>
+                <a href="{{ Route::has('orders.index') ? route('orders.index') : '#' }}" class="block px-3 py-2 rounded-lg text-xs font-bold {{ request()->routeIs('orders*') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-300 hover:text-white' }}">My Orders</a>
+            @endif
+
         </div>
 
         <div class="pt-4 pb-2 border-t border-slate-800 px-4">
-            <div class="text-xs font-bold text-emerald-400">{{ Auth::user()->name }}</div>
-            <div class="text-[10px] text-slate-500">{{ Auth::user()->email }}</div>
+            <div class="text-xs font-bold text-emerald-400">{{ Auth::user()->name ?? 'User' }}</div>
+            <div class="text-[10px] text-slate-500">{{ Auth::user()->email ?? '' }}</div>
 
             <div class="mt-3 space-y-1">
                 <a href="{{ route('profile.edit') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800">Profile</a>
+                
+                <!-- Mobile Logout Form -->
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <a href="{{ route('logout') }}" onclick="event.preventDefault(); this.closest('form').submit();" class="block px-3 py-2 rounded-lg text-xs font-semibold text-rose-400 hover:bg-rose-500/10">Log Out</a>
+                    <button type="submit" 
+                            class="w-full text-left block px-3 py-2 rounded-lg text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition">
+                        Log Out
+                    </button>
                 </form>
             </div>
         </div>

@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Ingredient extends Model
 {
@@ -13,18 +12,19 @@ class Ingredient extends Model
     protected $fillable = [
         'name',
         'type',
+        'quantity',
+        'unit',
+        'reorder_level',
         'calories',
         'price',
         'in_stock',
     ];
 
     /**
-     * Get product items associated with this ingredient.
+     * Stock එක සීමාවට වඩා අඩුදැයි බලන Helper Method එක
      */
-    public function productItems(): BelongsToMany
+    public function isLowStock(): bool
     {
-        return $this->belongsToMany(ProductItem::class, 'ingredient_product_item')
-                    ->withPivot('is_default', 'quantity')
-                    ->withTimestamps();
+        return $this->quantity <= $this->reorder_level;
     }
 }
