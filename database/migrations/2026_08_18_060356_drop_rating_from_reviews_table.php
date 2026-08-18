@@ -10,16 +10,23 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-{
-    Schema::table('reviews', function (Blueprint $table) {
-        $table->dropColumn('rating');
-    });
-}
+    {
+        Schema::table('reviews', function (Blueprint $table) {
+            if (Schema::hasColumn('reviews', 'rating')) {
+                $table->dropColumn('rating');
+            }
+        });
+    }
 
-public function down(): void
-{
-    Schema::table('reviews', function (Blueprint $table) {
-        $table->integer('rating')->default(5);
-    });
-}
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('reviews', function (Blueprint $table) {
+            if (!Schema::hasColumn('reviews', 'rating')) {
+                $table->integer('rating')->nullable();
+            }
+        });
+    }
 };

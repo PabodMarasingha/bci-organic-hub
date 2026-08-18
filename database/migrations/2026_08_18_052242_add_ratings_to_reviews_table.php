@@ -9,18 +9,36 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-   public function up(): void
-{
-    Schema::table('reviews', function (Blueprint $table) {
-        $table->integer('food_rating')->default(5)->after('user_id');
-        $table->integer('delivery_rating')->default(5)->after('food_rating');
-    });
-}
+    public function up(): void
+    {
+        Schema::table('reviews', function (Blueprint $table) {
+            if (!Schema::hasColumn('reviews', 'food_rating')) {
+                $table->integer('food_rating')->default(5)->after('user_id');
+            }
+            if (!Schema::hasColumn('reviews', 'delivery_rating')) {
+                $table->integer('delivery_rating')->default(5)->after('food_rating');
+            }
+        });
+    }
 
-public function down(): void
-{
-    Schema::table('reviews', function (Blueprint $table) {
-        $table->dropColumn(['food_rating', 'delivery_rating']);
-    });
-}
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('reviews', function (Blueprint $table) {
+            $columnsToDrop = [];
+
+            if (Schema::hasColumn('reviews', 'food_rating')) {
+                $columnsToDrop[] = 'food_rating';
+            }
+            if (Schema::hasColumn('reviews', 'delivery_rating')) {
+                $columnsToDrop[] = 'delivery_rating';
+            }
+
+            if (!empty($columnsToDrop)) {
+                $table->dropColumn($columnsToDrop);
+            }
+        });
+    }
 };
