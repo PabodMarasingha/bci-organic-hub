@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\DeliveryZone; // DeliveryZone Model එක Import කර ඇත
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Spatie\Permission\Models\Role;
 
 class RegisteredUserController extends Controller
 {
@@ -20,7 +22,10 @@ class RegisteredUserController extends Controller
      */
     public function create(): View
     {
-        return view('auth.register');
+        // View එකට Delivery Zones ලබා දීම (Model එක නොමැති නම් Empty Collection එකක් යවයි)
+        $deliveryZones = class_exists(DeliveryZone::class) ? DeliveryZone::all() : collect();
+
+        return view('auth.register', compact('deliveryZones'));
     }
 
     /**
@@ -30,24 +35,62 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        // 1. Form Validation (Delivery Data Role එක 'delivery' වන විට පරීක්ෂා කෙරේ)
         $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'name'             => ['required', 'string', 'max:255'],
+            'email'            => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
+            'password'         => ['required', 'confirmed', Rules\Password::defaults()],
+            'role'             => ['required', 'string', 'in:customer,staff,kitchen,delivery,Delivery Staff,admin'],
+            
+            // Dynamic Delivery Validation Rules
+            'phone_number'     => ['nullable', 'required_if:role,delivery', 'string', 'max:20'],
+            'delivery_zone_id' => ['nullable', 'required_if:role,delivery'],
+            'vehicle_type'     => ['nullable', 'required_if:role,delivery', 'string', 'max:100'],
+            'vehicle_number'   => ['nullable', 'required_if:role,delivery', 'string', 'max:50'],
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+        // Role එක Delivery ද යන්න පරීක්ෂාව
+        $isDelivery = in_array($request->role, ['delivery', 'Delivery Staff']);
+
+        // 2. User Creation
+        $user = User::query()->create([
+            'name'             => $request->name,
+            'email'            => $request->email,
+            'password'         => Hash::make($request->password),
+            'phone_number'     => $isDelivery ? $request->phone_number : null,
+            'delivery_zone_id' => $isDelivery ? $request->delivery_zone_id : null,
+            'vehicle_type'     => $isDelivery ? $request->vehicle_type : null,
+            'vehicle_number'   => $isDelivery ? $request->vehicle_number : null,
         ]);
 
-        $user->assignRole('customer');
+        if ($user instanceof User) {
+            // 3. Assign Role via Spatie
+            $role = Role::firstOrCreate([
+                'name'       => $request->role,
+                'guard_name' => 'web'
+            ]);
+            
+            $user->assignRole($role);
 
-        event(new Registered($user));
+            event(new Registered($user));
 
-        Auth::login($user);
+            Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+            // 4. Role-based Redirects
+            if ($user->hasRole('admin')) {
+                return redirect()->route('admin.dashboard');
+            }
+
+            if ($user->hasRole('staff') || $user->hasRole('kitchen')) {
+                return redirect()->route('staff.dashboard');
+            }
+
+            if ($user->hasRole('delivery') || $user->hasRole('Delivery Staff')) {
+                return redirect()->route('delivery.dashboard');
+            }
+        }
+
+        // Default: Customer Dashboard
+        return redirect()->intended(route('dashboard', absolute: false));
     }
 }
