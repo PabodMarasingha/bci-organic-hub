@@ -42,7 +42,7 @@ Route::get('/', function () {
             return redirect()->route('delivery.dashboard');
         }
 
-        return redirect()->route('dashboard');
+        return redirect()->route('menu');
     }
 
     return redirect()->route('login');
@@ -98,13 +98,16 @@ Route::middleware('auth')->group(function () {
         Route::prefix('orders')->name('orders.')->group(function () {
             Route::controller(OrderController::class)->group(function () {
                 Route::get('/my-orders', 'myOrders')->name('index');
-                Route::get('/create', 'create')->name('create');
+                
+                // Checkout Route (GET සහ POST දෙකම භාරගන්නා පරිදි Match කර ඇත)
+                Route::match(['get', 'post'], '/create', 'create')->name('create');
+                
                 Route::post('/', 'store')->name('store');
                 Route::get('/{order}', 'show')->name('show');
                 Route::patch('/{order}/cancel', 'cancel')->name('cancel');
             });
 
-            // Order Review Routes (GET for view page, POST for submission)
+            // Order Review Routes
             Route::get('/{order}/review', [OrderReviewController::class, 'create'])->name('review.create');
             Route::post('/{order}/review', [OrderReviewController::class, 'store'])->name('review.store');
         });

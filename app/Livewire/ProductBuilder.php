@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Ingredient;
+use App\Models\Product;
 use App\Models\ProductItem;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
@@ -11,7 +12,11 @@ use Livewire\Attributes\Layout;
 #[Layout('layouts.app')]
 class ProductBuilder extends Component
 {
-    public ProductItem $product;
+    /**
+     * @var \App\Models\Product|\App\Models\ProductItem|mixed
+     */
+    public $product;
+
     public array $selectedIngredients = [];
     public bool $selectAll = false;
     public float $runningTotal = 0.0;
@@ -22,15 +27,23 @@ class ProductBuilder extends Component
     /**
      * Component mount method.
      *
-     * @param \App\Models\ProductItem|string|int $product
+     * @param mixed $product
      * @return void
      */
     public function mount($product): void
     {
-        if ($product instanceof ProductItem) {
+        if ($product instanceof Product || $product instanceof ProductItem) {
             $this->product = $product;
         } else {
-            $this->product = ProductItem::findOrFail($product);
+            if (class_exists(ProductItem::class)) {
+                $this->product = ProductItem::find($product) ?? (class_exists(Product::class) ? Product::find($product) : null);
+            } else {
+                $this->product = Product::find($product);
+            }
+
+            if (!$this->product) {
+                abort(404, 'Product not found.');
+            }
         }
         
         $this->selectedIngredients = [];
@@ -91,7 +104,7 @@ class ProductBuilder extends Component
         $ingredients = Ingredient::whereIn('id', $this->selectedIngredients)->get();
 
         $basePrice = (float) ($this->product->price ?? 0.0);
-        $baseCalories = (int) ($this->product->base_calories ?? 0);
+        $baseCalories = (int) ($this->product->base_calories ?? $this->product->calories ?? 0);
 
         $extraPrice = (float) $ingredients->sum('price');
         $extraCalories = (int) $ingredients->sum('calories');
@@ -105,10 +118,11 @@ class ProductBuilder extends Component
      */
     private function getAvailableIngredients(): Collection
     {
-        // in_stock column එක නොමැති නිසා directly සියලුම ingredients ලබා ගනී
-        return $this->product->ingredients()->exists() 
-            ? $this->product->ingredients()->get() 
-            : Ingredient::all();
+        if (method_exists($this->product, 'ingredients') && $this->product->ingredients()->exists()) {
+            return $this->product->ingredients()->get();
+        }
+
+        return Ingredient::all();
     }
 
     /**
@@ -135,15 +149,18 @@ class ProductBuilder extends Component
 
         $cart = session()->get('cart', []);
 
+        $basePrice = (float) ($this->product->price ?? 0.0);
+        $baseCalories = (int) ($this->product->base_calories ?? $this->product->calories ?? 0);
+
         $cart[] = [
             'cart_item_id' => uniqid('cart_'),
             'product_id' => $this->product->id,
             'item_name' => $this->product->name,
-            'image' => $this->product->image,
+            'image' => $this->product->image ?? $this->product->image_url ?? null,
             'quantity' => (int) $this->quantity,
-            'unit_price' => (float) ($this->product->price + $ingredients->sum('price')),
+            'unit_price' => (float) ($basePrice + $ingredients->sum('price')),
             'total_price' => (float) $this->runningTotal,
-            'unit_calories' => (int) ($this->product->base_calories + $ingredients->sum('calories')),
+            'unit_calories' => (int) ($baseCalories + $ingredients->sum('calories')),
             'total_calories' => (int) $this->runningCalories,
             'customizations' => $customizations,
             'special_instructions' => $this->specialInstructions,

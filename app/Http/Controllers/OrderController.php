@@ -36,18 +36,19 @@ class OrderController extends Controller
     }
 
     /**
-     * Add custom or standard meal to session cart.
+     * Add custom or standard meal to session cart and redirect straight to cart page.
      */
     public function addToCart(Request $request)
     {
         $validated = $request->validate([
             'product_id'           => 'required|exists:product_items,id',
-            'quantity'             => 'required|integer|min:1',
+            'quantity'             => 'nullable|integer|min:1',
             'ingredients'          => 'nullable|array',
             'ingredients.*'        => 'exists:ingredients,id',
             'special_instructions' => 'nullable|string|max:255',
         ]);
 
+        $quantity = (int) ($validated['quantity'] ?? 1);
         $product = ProductItem::findOrFail($validated['product_id']);
         
         $ingredientIds = array_map('intval', $validated['ingredients'] ?? []);
@@ -56,13 +57,13 @@ class OrderController extends Controller
         $selectedIngredients = Ingredient::whereIn('id', $ingredientIds)->get();
 
         $extraPrice = $selectedIngredients->sum('price');
-        $unitPrice = $product->price + $extraPrice;
+        $unitPrice = (float) $product->price + $extraPrice;
 
         $customizations = $selectedIngredients->map(function ($ingredient) {
             return [
                 'id'    => $ingredient->id,
                 'name'  => $ingredient->name,
-                'price' => $ingredient->price,
+                'price' => (float) $ingredient->price,
             ];
         })->toArray();
 
@@ -88,12 +89,12 @@ class OrderController extends Controller
         }
 
         if ($foundKey !== null) {
-            $cart[$foundKey]['quantity'] += $validated['quantity'];
+            $cart[$foundKey]['quantity'] += $quantity;
         } else {
             $cart[] = [
                 'product_id'           => $product->id,
                 'item_name'            => $product->name,
-                'quantity'             => $validated['quantity'],
+                'quantity'             => $quantity,
                 'unit_price'           => $unitPrice,
                 'customizations'       => $customizations,
                 'special_instructions' => $validated['special_instructions'] ?? null,
@@ -158,14 +159,32 @@ class OrderController extends Controller
     }
 
     /**
-     * Display checkout form.
+     * Display checkout form (Handles GET and POST requests from Selected Items Form).
      */
-    public function create()
+    public function create(Request $request)
     {
         $cart = Session::get('cart', []);
 
         if (empty($cart)) {
             return redirect()->route('menu')->withErrors(['cart' => 'Your cart is empty.']);
+        }
+
+        // Cart page එකේ Checkbox මඟින් Select කළ Items Filter කිරීම
+        if ($request->isMethod('post') && $request->has('selected_items')) {
+            $selectedIndices = $request->input('selected_items', []);
+            
+            // පරිශීලකයා select කළ items පමණක් session cart එකෙන් වෙන් කරයි
+            $cart = array_intersect_key($cart, array_flip($selectedIndices));
+
+            if (empty($cart)) {
+                return redirect()->route('cart')->withErrors(['cart' => 'Please select at least one item to proceed.']);
+            }
+
+            // Processing සඳහා තෝරාගත් Items Temporary Session එකක ගබඩා කිරීම
+            Session::put('checkout_items', $cart);
+        } else {
+            // GET request එකකදී standard cart එක හෝ session එකේ ඇති checkout_items ලබා ගනී
+            $cart = Session::get('checkout_items', $cart);
         }
 
         return view('customers.orders.create', [
@@ -192,7 +211,8 @@ class OrderController extends Controller
             'card_cvc'             => 'required_if:payment_method,card|nullable|string|max:4',
         ]);
 
-        $cart = Session::get('cart', []);
+        // Selected Items ඇති නම් එයින්ද, නැතහොත් ප්‍රධාන Cart එකෙන්ද දත්ත ගනී
+        $cart = Session::get('checkout_items', Session::get('cart', []));
 
         if (empty($cart)) {
             return back()->withErrors(['cart' => 'Your cart is empty.']);
@@ -264,7 +284,21 @@ class OrderController extends Controller
                 return $order;
             });
 
-            Session::forget('cart');
+            // Order එක සාර්ථක වූ පසු Select කර ගෙවූ Items Cart එකෙන් ඉවත් කරයි
+            if (Session::has('checkout_items')) {
+                $fullCart = Session::get('cart', []);
+                $checkoutItems = Session::get('checkout_items', []);
+
+                // Order කළ Items ප්‍රධාන cart එකෙන් අයින් කිරීම
+                $updatedCart = array_filter($fullCart, function ($key) use ($checkoutItems) {
+                    return !array_key_exists($key, $checkoutItems);
+                }, ARRAY_FILTER_USE_KEY);
+
+                Session::put('cart', array_values($updatedCart));
+                Session::forget('checkout_items');
+            } else {
+                Session::forget('cart');
+            }
 
             return redirect()->route('orders.show', $order->id)
                 ->with('message', 'Order placed successfully and dispatched to kitchen!');
@@ -282,6 +316,7 @@ class OrderController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
+        // Review දත්ත ද සමඟ Eager Load කිරීම
         $order->load(['items.product', 'payment', 'delivery.driver', 'deliveryZone', 'review']);
 
         return view('customers.orders.show', compact('order'));
@@ -292,6 +327,7 @@ class OrderController extends Controller
      */
     public function myOrders(Request $request)
     {
+        // Customer Order History එකෙහි Review දත්ත Eager Load කිරීම
         $orders = CustomerOrder::with(['items.product', 'deliveryZone', 'delivery.driver', 'review'])
             ->where('user_id', $request->user()->id)
             ->latest()
