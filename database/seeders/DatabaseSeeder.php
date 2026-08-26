@@ -11,6 +11,10 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // 1. Create Real Organic Ingredients
+        $this->call(RoleSeeder::class);
+        $this->call(ProductItemsSeeder::class);
+        $this->call(DeliveryTestingSeeder::class);
+        $this->call(ProductItemSeeder::class);
         $ingredients = [
             ['name' => 'Organic Red Quinoa (100g)', 'type' => 'Salad Base', 'calories' => 120, 'price' => 250.00],
             ['name' => 'Steamed Brown Rice (150g)', 'type' => 'Salad Base', 'calories' => 160, 'price' => 150.00],
