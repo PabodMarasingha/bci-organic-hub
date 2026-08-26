@@ -8,14 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // 1. Orders Table එකට Cash Collection Status එක එකතු කිරීම
+        
         if (Schema::hasTable('orders') && !Schema::hasColumn('orders', 'is_cash_collected')) {
             Schema::table('orders', function (Blueprint $table) {
                 $table->boolean('is_cash_collected')->default(false);
             });
         }
 
-        // 2. Driver Table එක සොයාගැනීම (delivery_drivers හෝ drivers) නැතිනම් සාදා ගැනීම
+        
         $driverTable = Schema::hasTable('delivery_drivers') ? 'delivery_drivers' : (Schema::hasTable('drivers') ? 'drivers' : null);
 
         if ($driverTable) {
@@ -44,7 +44,7 @@ return new class extends Migration
             $driverTable = 'delivery_drivers';
         }
 
-        // 3. Driver Feedback Table එක සාදා ගැනීම
+        
         if (!Schema::hasTable('delivery_feedbacks')) {
             Schema::create('delivery_feedbacks', function (Blueprint $table) {
                 $table->id();

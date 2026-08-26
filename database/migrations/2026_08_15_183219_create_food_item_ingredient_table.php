@@ -15,7 +15,7 @@ return new class extends Migration
         $table->id();
         $table->foreignId('food_item_id')->constrained()->cascadeOnDelete();
         $table->foreignId('ingredient_id')->constrained()->cascadeOnDelete();
-        $table->decimal('quantity_required', 10, 2); // එක් Portion එකකට අවශ්‍ය අමුද්‍රව්‍ය ප්‍රමාණය
+        $table->decimal('quantity_required', 10, 2); 
         $table->timestamps();
     });
 }

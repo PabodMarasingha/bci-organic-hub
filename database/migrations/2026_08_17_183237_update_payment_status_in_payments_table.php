@@ -9,7 +9,7 @@ class UpdatePaymentStatusInPaymentsTable extends Migration
     public function up(): void
     {
         Schema::table('payments', function (Blueprint $table) {
-            // payment_status එක VARCHAR(50) ලෙස වෙනස් කිරීම
+            
             $table->string('payment_status', 50)->default('pending')->change();
         });
     }

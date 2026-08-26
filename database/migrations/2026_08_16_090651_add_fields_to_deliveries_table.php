@@ -33,7 +33,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('deliveries', function (Blueprint $table) {
-            // පළමුව Foreign Key constraints ඉවත් කරන්න
+            
             if (Schema::hasColumn('deliveries', 'order_id')) {
                 $table->dropForeign(['order_id']);
             }
@@ -41,7 +41,7 @@ return new class extends Migration
                 $table->dropForeign(['driver_id']);
             }
 
-            // ඉන්පසු columns ඉවත් කරන්න
+           
             $table->dropColumn([
                 'order_id', 
                 'driver_id', 

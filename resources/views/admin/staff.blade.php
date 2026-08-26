@@ -1,10 +1,10 @@
 <x-app-layout>
     <div class="py-8 bg-[#060913] min-h-screen text-slate-100 font-sans" 
          x-data="{ 
-            editModalOpen: false, 
-            editUser: {}, 
-            createRole: 'kitchen',
-            notificationOpen: true 
+             editModalOpen: false, 
+             editUser: {}, 
+             createRole: 'kitchen',
+             notificationOpen: true 
          }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
@@ -60,9 +60,9 @@
                     <div class="md:col-span-4">
                         <label class="block text-xs text-slate-400 mb-1 font-semibold">System Role</label>
                         <select name="role" x-model="createRole" class="w-full bg-[#121a29] border border-slate-700/60 rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-teal-500 uppercase" required>
-                            @foreach($roles->where('name', '!=', 'customer') as $role)
-                                <option value="{{ $role->name }}">{{ strtoupper($role->name) }}</option>
-                            @endforeach
+@foreach($roles->where('name', '!=', 'customer') as $role)
+    <option value="{{ $role->name }}">{{ strtoupper($role->name) }}</option>
+@endforeach
                         </select>
                     </div>
 
@@ -119,7 +119,7 @@
                                     $roleName = $user->roles->first()?->name ?? 'customer';
                                     $badgeStyle = match(strtolower($roleName)) {
                                         'admin' => 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-                                        'kitchen' => 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+                                        'kitchen', 'staff' => 'bg-amber-500/10 text-amber-400 border-amber-500/30',
                                         'delivery' => 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30',
                                         default => 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30',
                                     };
@@ -132,7 +132,7 @@
                                     </td>
                                     <td class="py-3.5 px-4">
                                         <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border {{ $badgeStyle }}">
-                                            {{ $roleName }}
+                                            {{ $roleName === 'staff' ? 'KITCHEN STAFF' : $roleName }}
                                         </span>
                                     </td>
                                     <td class="py-3.5 px-4 text-slate-400">
@@ -219,9 +219,9 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Role</label>
                         <select name="role" x-model="editUser.role" class="w-full bg-[#121a29] border border-slate-700/60 rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-teal-500 uppercase" required>
-                            @foreach($roles->where('name', '!=', 'customer') as $role)
-                                <option value="{{ $role->name }}">{{ strtoupper($role->name) }}</option>
-                            @endforeach
+@foreach($roles->where('name', '!=', 'customer') as $role)
+    <option value="{{ $role->name }}">{{ strtoupper($role->name) }}</option>
+@endforeach
                         </select>
                     </div>
 

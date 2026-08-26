@@ -18,12 +18,12 @@
             </div>
 
             <!-- Session Alert Message -->
-            @if (session('message'))
+            @if (session('message') || session('success'))
                 <div class="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-4 rounded-2xl shadow-lg">
                     <svg class="w-5 h-5 shrink-0 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
-                    <span class="text-xs font-bold">{{ session('message') }}</span>
+                    <span class="text-xs font-bold">{{ session('message') ?? session('success') }}</span>
                 </div>
             @endif
 
@@ -103,8 +103,9 @@
                                 <!-- Order Status Action Buttons -->
                                 <div class="pt-2">
                                     @if ($order->status === 'pending')
-                                        <form method="POST" action="{{ route('kitchen.updateStatus', $order->id) }}">
-                                            @csrf @method('PATCH')
+                                        <form method="POST" action="{{ route('kitchen.orders.updateStatus', $order->id) }}">
+                                            @csrf 
+                                            @method('PATCH')
                                             <input type="hidden" name="status" value="preparing">
                                             <button type="submit" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/10 transition duration-200 flex items-center justify-center gap-2">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -116,8 +117,9 @@
                                     @endif
 
                                     @if ($order->status === 'preparing')
-                                        <form method="POST" action="{{ route('kitchen.updateStatus', $order->id) }}">
-                                            @csrf @method('PATCH')
+                                        <form method="POST" action="{{ route('kitchen.orders.updateStatus', $order->id) }}">
+                                            @csrf 
+                                            @method('PATCH')
                                             <input type="hidden" name="status" value="ready">
                                             <button type="submit" class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition duration-200 flex items-center justify-center gap-2">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -4,36 +4,26 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Review extends Model
 {
     use HasFactory;
 
-    /**
-     * Mass assignable attributes.
-     */
-    protected $fillable = [
-        'user_id',
-        'customer_order_id',
-        'food_rating',
-        'delivery_rating',
-        'comment',
-    ];
+   
+    protected $guarded = ['id'];
 
-    /**
-     * Get the order associated with the review.
-     */
-    public function order(): BelongsTo
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function order()
     {
         return $this->belongsTo(CustomerOrder::class, 'customer_order_id');
     }
 
-    /**
-     * Get the user (customer) that wrote the review.
-     */
-    public function user(): BelongsTo
+    public function product()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(ProductItem::class, 'product_item_id');
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\DeliveryZone; 
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,7 +21,9 @@ class RegisteredUserController extends Controller
      */
     public function create(): View
     {
-        return view('auth.register');
+        $deliveryZones = class_exists(DeliveryZone::class) ? DeliveryZone::all() : collect();
+
+        return view('auth.register', compact('deliveryZones'));
     }
 
     /**
@@ -39,14 +42,31 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+        $isDelivery = in_array($request->role, ['delivery', 'Delivery Staff']);
+
+        $deliveryZoneId = $request->delivery_zone_id;
+
+        if ($isDelivery && !empty($deliveryZoneId) && !is_numeric($deliveryZoneId) && class_exists(DeliveryZone::class)) {
+            $newZone = DeliveryZone::firstOrCreate([
+                'name' => $deliveryZoneId
+            ]);
+            $deliveryZoneId = $newZone->id;
+        }
+
+        $user = User::query()->create([
+            'name'             => $request->name,
+            'email'            => $request->email,
+            'password'         => Hash::make($request->password),
+            'phone_number'     => $isDelivery ? $request->phone_number : null,
+            'delivery_zone_id' => $isDelivery ? $deliveryZoneId : null,
+            'vehicle_type'     => $isDelivery ? $request->vehicle_type : null,
+            'vehicle_number'   => $isDelivery ? $request->vehicle_number : null,
         ]);
 
         // Hardcoded to 'customer' — never trust a role value from the request.
-        $user->assignRole('customer');
+        if (method_exists($user, 'assignRole')) {
+            $user->assignRole('customer');
+        }
 
         event(new Registered($user));
 

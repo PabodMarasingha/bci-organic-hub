@@ -12,7 +12,7 @@ return new class extends Migration
    public function up(): void
 {
     Schema::table('users', function (Blueprint $table) {
-        // Driver points (Default point ගණන 100 ක් ලෙස ගනිමු)
+        
         $table->integer('rating_points')->default(100)->after('email');
     });
 }

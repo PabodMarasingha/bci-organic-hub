@@ -13,10 +13,20 @@ return new class extends Migration
     {
         Schema::create('reviews', function (Blueprint $table) {
             $table->id();
+            
+            
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('customer_order_id')->constrained('customer_orders')->cascadeOnDelete();
-            $table->unsignedTinyInteger('food_rating'); // Food Rating (1-5)
-            $table->unsignedTinyInteger('delivery_rating')->nullable(); // Delivery Rating (1-5)
+            
+            
+            $table->foreignId('customer_order_id')->nullable()->constrained('customer_orders')->cascadeOnDelete();
+            
+            
+            $table->foreignId('product_item_id')->nullable()->constrained('product_items')->cascadeOnDelete();
+            
+            // Ratings 
+            $table->unsignedTinyInteger('rating')->nullable(); 
+            $table->unsignedTinyInteger('delivery_rating')->nullable(); 
+            
             $table->text('comment')->nullable();
             $table->timestamps();
         });

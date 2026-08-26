@@ -81,6 +81,14 @@ class CustomerOrder extends Model
     }
 
     /**
+     * Get the assigned driver for the order.
+     */
+    public function driver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'driver_id');
+    }
+
+    /**
      * Get the delivery zone associated with the order.
      */
     public function deliveryZone(): BelongsTo

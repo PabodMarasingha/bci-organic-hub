@@ -38,5 +38,10 @@ class RoleSeeder extends Seeder
             ['name' => 'Admin', 'password' => bcrypt('password')]
         );
         $admin->syncRoles(['admin']);
+        $customer = User::firstOrCreate(
+    ['email' => 'customer@bci.test'],
+    ['name' => 'Demo Customer', 'password' => bcrypt('password')]
+);
+$customer->syncRoles(['customer']);
     }
 }

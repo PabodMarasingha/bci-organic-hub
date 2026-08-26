@@ -17,12 +17,12 @@
                 </div>
             </div>
 
-            @if (session('message'))
+            @if (session('message') || session('success'))
                 <div class="flex items-center gap-3 bg-organic-green/10 dark:bg-organic-gold/10 border border-organic-green/30 dark:border-organic-gold/30 text-organic-green dark:text-organic-gold p-4 rounded-2xl shadow-sm">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
-                    <span class="text-xs font-bold">{{ session('message') }}</span>
+                    <span class="text-xs font-bold">{{ session('message') ?? session('success') }}</span>
                 </div>
             @endif
 
@@ -36,13 +36,13 @@
                             <h2 class="font-display text-lg font-bold flex items-center gap-2">
                                 <span>Active Live Orders</span>
                                 <span class="px-2.5 py-0.5 text-xs font-extrabold rounded-full bg-organic-gold/10 text-organic-gold border border-organic-gold/30">
-                                    {{ count($orders) }} Active
+                                    {{ count($orders ?? []) }} Active
                                 </span>
                             </h2>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            @forelse ($orders as $order)
+                            @forelse ($orders ?? [] as $order)
                                 <div class="bg-white dark:bg-slate-900/90 border border-organic-green/10 dark:border-slate-800 rounded-3xl p-5 shadow-md hover:border-organic-gold/40 dark:hover:border-slate-700 transition duration-300 flex flex-col justify-between space-y-4">
 
                                     <div>
@@ -183,7 +183,7 @@
                                     </div>
 
                                     <div class="text-[11px] text-organic-charcoal/50 dark:text-slate-500 text-right pt-2 border-t border-organic-green/10 dark:border-slate-800/50">
-                                        Ready at: {{ $readyOrder->updated_at->format('h:i A') }}
+                                        Ready at: {{ optional($readyOrder->updated_at)->format('h:i A') ?? 'N/A' }}
                                     </div>
                                 </div>
                             @empty
@@ -209,7 +209,7 @@
                         <p class="text-xs text-organic-charcoal/60 dark:text-slate-400 mb-4 leading-relaxed">Toggle ingredients out of stock to automatically update menu items for customers.</p>
 
                         <div class="space-y-3 max-h-[520px] overflow-y-auto pr-1">
-                            @foreach ($ingredients as $ingredient)
+                            @forelse ($ingredients ?? [] as $ingredient)
                                 <div class="flex items-center justify-between p-3.5 rounded-2xl bg-organic-cream dark:bg-[#141a26] border border-organic-green/10 dark:border-slate-800/80 hover:border-organic-gold/40 dark:hover:border-slate-700 transition">
                                     <div class="flex items-center gap-3">
                                         <span class="w-2.5 h-2.5 rounded-full {{ $ingredient->in_stock ? 'bg-organic-green dark:bg-organic-gold' : 'bg-organic-tomato' }}"></span>
@@ -236,7 +236,11 @@
                                         </button>
                                     </form>
                                 </div>
-                            @endforeach
+                            @empty
+                                <div class="p-4 text-center bg-organic-cream dark:bg-slate-900/40 rounded-2xl border border-organic-green/10 dark:border-slate-800/60">
+                                    <p class="text-xs text-organic-charcoal/50 dark:text-slate-500">No ingredients configured yet.</p>
+                                </div>
+                            @endforelse
                         </div>
                     </div>
                 </div>

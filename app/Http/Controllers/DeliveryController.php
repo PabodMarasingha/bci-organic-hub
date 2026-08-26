@@ -5,39 +5,47 @@ namespace App\Http\Controllers;
 use App\Models\Delivery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class DeliveryController extends Controller
 {
     /**
+     * Get dynamic status column name based on database schema.
+     */
+    private function getStatusColumn(): string
+    {
+        return Schema::hasColumn('deliveries', 'delivery_status') ? 'delivery_status' : 'status';
+    }
+
+    /**
      * Display active deliveries & daily metrics for driver dashboard.
      */
     public function index(Request $request): View
     {
         $user = $request->user();
+        $statusColumn = $this->getStatusColumn();
 
-        // Drivers Zone ID ලබා ගැනීම
+        
         $zoneId = $user->delivery_zone_id ?? $user->deliveryProfile->delivery_zone_id ?? null;
 
-        // Status Column Name පරීක්ෂාව
-        $statusColumn = Schema::hasColumn('deliveries', 'delivery_status') ? 'delivery_status' : 'status';
-
-        // Active Deliveries Query කිරීම
+        
         $query = Delivery::with([
             'customerOrder.user', 
             'customerOrder.deliveryZone', 
             'customerOrder.items', 
             'customerOrder.payment',
+            'customerOrder.review',
             'order.user', 
             'order.deliveryZone', 
             'order.items',
-            'order.payment'
+            'order.payment',
+            'order.review'
         ])
-        // Deliveries සඳහා අදාළ සියලුම Active Statuses ඇතුළත් කිරීම
         ->whereIn($statusColumn, ['unassigned', 'assigned', 'picked_up', 'out_for_delivery', 'pending']);
 
-        // Driver assign වී නැති හෝ මෙම Driver ට assign වූ Orders පමණක් Filter කිරීම
+        
         if (Schema::hasColumn('deliveries', 'driver_id')) {
             $query->where(function ($q) use ($user) {
                 $q->whereNull('driver_id')
@@ -45,7 +53,7 @@ class DeliveryController extends Controller
             });
         }
 
-        // Zone ID එකක් තිබේ නම් පමණක් Zone filter කිරීම
+        
         if ($zoneId) {
             $query->where(function ($q) use ($zoneId) {
                 $q->whereHas('customerOrder', function ($sub) use ($zoneId) {
@@ -59,7 +67,7 @@ class DeliveryController extends Controller
 
         $deliveries = $query->latest()->get();
 
-        // අද දින Delivered කරන ලද දත්ත Query කිරීම
+        
         $todayDeliveriesQuery = Delivery::where($statusColumn, 'delivered')
             ->whereDate('delivered_at', today());
 
@@ -69,15 +77,12 @@ class DeliveryController extends Controller
 
         $completedTodayCount = $todayDeliveriesQuery->count();
 
-        // අද දින එකතු කළ මුළු COD/Cash ප්‍රමාණය පමණක් Calculate කිරීම
+        
         $totalCollectedToday = $todayDeliveriesQuery->get()->sum(function ($delivery) {
             $order = $delivery->customerOrder ?? $delivery->order;
             if (!$order) return 0;
 
-            $method = strtolower($order->payment_method ?? $order->payment_type ?? '');
-            $isCod = in_array($method, ['cod', 'cash', 'cash_on_delivery']);
-
-            return $isCod ? ($order->total_amount ?? $order->total_price ?? $order->grand_total ?? 0) : 0;
+            return $order->total_amount ?? $order->total_price ?? $order->grand_total ?? 0;
         });
 
         return view('delivery.index', compact('deliveries', 'completedTodayCount', 'totalCollectedToday'));
@@ -89,41 +94,55 @@ class DeliveryController extends Controller
     public function dailyLog(Request $request): View
     {
         $user = $request->user();
-        $statusColumn = Schema::hasColumn('deliveries', 'delivery_status') ? 'delivery_status' : 'status';
+        $statusColumn = $this->getStatusColumn();
 
         $query = Delivery::with([
             'customerOrder.user', 
             'customerOrder.deliveryZone', 
             'customerOrder.items', 
             'customerOrder.payment',
+            'customerOrder.review',
             'order.user', 
             'order.deliveryZone', 
             'order.items',
-            'order.payment'
+            'order.payment',
+            'order.review'
         ])
         ->where($statusColumn, 'delivered');
 
-        // Driver ට අදාළ Log පමණක් Filter කිරීම
+        
         if ($user && Schema::hasColumn('deliveries', 'driver_id')) {
             $query->where('driver_id', $user->id);
         }
 
         $deliveries = $query->latest('delivered_at')->get();
 
-        // අද දින එකතු කළ මුළු COD Cash ප්‍රමාණය Calculate කිරීම
+        
         $totalCollectedToday = $deliveries->filter(function ($delivery) {
-            return $delivery->delivered_at && \Carbon\Carbon::parse($delivery->delivered_at)->isToday();
+            if (!$delivery->delivered_at) return false;
+            return \Carbon\Carbon::parse($delivery->delivered_at)->isToday();
         })->sum(function ($delivery) {
             $order = $delivery->customerOrder ?? $delivery->order;
             if (!$order) return 0;
 
-            $method = strtolower($order->payment_method ?? $order->payment_type ?? '');
-            $isCod = in_array($method, ['cod', 'cash', 'cash_on_delivery']);
+            return $order->total_amount ?? $order->total_price ?? $order->grand_total ?? 0;
+        });
+
+        // 2. COD Cash පමණක් වෙනම Calculate කිරීම (අවශ්‍ය වුවහොත්)
+        $codCollectedToday = $deliveries->filter(function ($delivery) {
+            if (!$delivery->delivered_at) return false;
+            return \Carbon\Carbon::parse($delivery->delivered_at)->isToday();
+        })->sum(function ($delivery) {
+            $order = $delivery->customerOrder ?? $delivery->order;
+            if (!$order) return 0;
+
+            $paymentMethod = $order->payment->payment_method ?? $order->payment_method ?? $order->payment_type ?? '';
+            $isCod = in_array(strtolower($paymentMethod), ['cod', 'cash', 'cash_on_delivery']);
 
             return $isCod ? ($order->total_amount ?? $order->total_price ?? $order->grand_total ?? 0) : 0;
         });
 
-        return view('delivery.daily-log', compact('deliveries', 'totalCollectedToday'));
+        return view('delivery.daily-log', compact('deliveries', 'totalCollectedToday', 'codCollectedToday'));
     }
 
     /**
@@ -140,66 +159,71 @@ class DeliveryController extends Controller
         ]);
 
         $user = $request->user();
-        $statusColumn = Schema::hasColumn('deliveries', 'delivery_status') ? 'delivery_status' : 'status';
+        $statusColumn = $this->getStatusColumn();
 
-        $updateData = [
-            $statusColumn   => $statusInput,
-            'delivered_at'  => $statusInput === 'delivered' ? now() : $delivery->delivered_at,
-        ];
+       
+        DB::transaction(function () use ($delivery, $statusInput, $statusColumn, $user) {
+            $updateData = [
+                $statusColumn  => $statusInput,
+                'delivered_at' => $statusInput === 'delivered' ? now() : $delivery->delivered_at,
+            ];
 
-        // Status වෙනස් වූ විට Driver ව Assign කිරීම
-        if (in_array($statusInput, ['picked_up', 'out_for_delivery', 'assigned', 'delivered']) && $user) {
-            if (Schema::hasColumn('deliveries', 'driver_id')) {
-                $updateData['driver_id'] = $user->id;
+            // Driver Assign කිරීම
+            if (in_array($statusInput, ['picked_up', 'out_for_delivery', 'assigned', 'delivered']) && $user) {
+                if (Schema::hasColumn('deliveries', 'driver_id')) {
+                    $updateData['driver_id'] = $user->id;
+                }
             }
-        }
 
-        $delivery->update($updateData);
+            $delivery->update($updateData);
 
-        // Parent Order එකෙහි Status එක Synchronize කිරීම
-        $order = $delivery->customerOrder ?? $delivery->order;
+            
+            $order = $delivery->customerOrder ?? $delivery->order;
 
-        if ($order) {
-            if (in_array($statusInput, ['picked_up', 'out_for_delivery'])) {
-                if (Schema::hasColumn('orders', 'order_status')) {
-                    $order->update(['order_status' => 'out_for_delivery']);
-                } elseif (Schema::hasColumn('orders', 'status')) {
-                    $order->update(['status' => 'out_for_delivery']);
-                }
-            } elseif ($statusInput === 'delivered') {
-                $paymentMethod = strtolower($order->payment_method ?? $order->payment_type ?? '');
-                $isCod = in_array($paymentMethod, ['cod', 'cash', 'cash_on_delivery']);
+            if ($order) {
+                $orderTable = $order->getTable();
 
-                $orderUpdates = [];
-                
-                if (Schema::hasColumn('orders', 'order_status')) {
-                    $orderUpdates['order_status'] = 'completed';
-                } elseif (Schema::hasColumn('orders', 'status')) {
-                    $orderUpdates['status'] = 'completed';
-                }
+                if (in_array($statusInput, ['picked_up', 'out_for_delivery'])) {
+                    if (Schema::hasColumn($orderTable, 'order_status')) {
+                        $order->update(['order_status' => 'out_for_delivery']);
+                    } elseif (Schema::hasColumn($orderTable, 'status')) {
+                        $order->update(['status' => 'out_for_delivery']);
+                    }
+                } elseif ($statusInput === 'delivered') {
+                    $paymentMethod = $order->payment->payment_method ?? $order->payment_method ?? $order->payment_type ?? '';
+                    $isCod = in_array(strtolower($paymentMethod), ['cod', 'cash', 'cash_on_delivery']);
 
-                // COD නම් Cash Collected කරගත් බව Mark කිරීම
-                if ($isCod && Schema::hasColumn('orders', 'is_cash_collected')) {
-                    $orderUpdates['is_cash_collected'] = true;
-                }
+                    $orderUpdates = [];
+                    
+                    if (Schema::hasColumn($orderTable, 'order_status')) {
+                        $orderUpdates['order_status'] = 'completed';
+                    } elseif (Schema::hasColumn($orderTable, 'status')) {
+                        $orderUpdates['status'] = 'completed';
+                    }
 
-                $order->update($orderUpdates);
+                    
+                    if ($isCod && Schema::hasColumn($orderTable, 'is_cash_collected')) {
+                        $orderUpdates['is_cash_collected'] = true;
+                    }
 
-                // Order එකට අදාළ Payment Status එක 'paid' ලෙස වෙනස් කිරීම
-                if (method_exists($order, 'payment') && $order->payment) {
-                    $order->payment->update(['payment_status' => 'paid']);
-                }
+                    $order->update($orderUpdates);
 
-                // Driver ට Points එකතු කිරීම (+10 Points)
-                if ($user) {
-                    if (Schema::hasColumn('users', 'points')) {
-                        $user->increment('points', 10);
-                    } elseif (method_exists($user, 'deliveryProfile') && $user->deliveryProfile && Schema::hasColumn('delivery_drivers', 'points')) {
-                        $user->deliveryProfile->increment('points', 10);
+                    
+                    if (method_exists($order, 'payment') && $order->payment) {
+                        $order->payment->update(['payment_status' => 'paid']);
+                    }
+
+                    
+                    if ($user) {
+                        if (Schema::hasColumn('users', 'points')) {
+                            $user->increment('points', 10);
+                        } elseif (method_exists($user, 'deliveryProfile') && $user->deliveryProfile && Schema::hasColumn('delivery_drivers', 'points')) {
+                            $user->deliveryProfile->increment('points', 10);
+                        }
                     }
                 }
             }
-        }
+        });
 
         return back()->with('message', 'Delivery status successfully updated!');
     }

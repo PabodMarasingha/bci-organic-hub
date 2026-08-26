@@ -9,15 +9,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            
-            $table->string('role')->default('customer')->after('email');
+            $table->enum('driver_status', ['available', 'on_delivery', 'offline'])->default('offline');
         });
     }
 
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('role');
+            $table->dropColumn('driver_status');
         });
     }
 };

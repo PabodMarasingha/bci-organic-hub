@@ -9,6 +9,7 @@ use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\KitchenController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderReviewController;
+use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\ProfileController;
 use App\Livewire\CartView;
 use App\Livewire\ProductBuilder;
@@ -35,14 +36,14 @@ Route::get('/', function () {
         }
 
         if ($user->hasRole('kitchen') || $user->hasRole('staff') || in_array($role, ['kitchen', 'staff'], true)) {
-            return redirect()->route('staff.dashboard');
+            return redirect()->route('kitchen.dashboard');
         }
 
         if ($user->hasRole('delivery') || $user->hasRole('Delivery Staff') || in_array($role, ['delivery', 'delivery staff'], true)) {
             return redirect()->route('delivery.dashboard');
         }
 
-        return redirect()->route('dashboard');
+        return redirect()->route('menu');
     }
 
     return redirect()->route('login');
@@ -83,6 +84,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/menu', [CustomerMenuController::class, 'index'])->name('menu');
         Route::get('/customer/menu', [CustomerMenuController::class, 'index'])->name('customer.menu');
 
+        // Product Review Route
+        Route::post('/product/{product}/review', [ProductReviewController::class, 'store'])->name('review.store');
+
         // Cart Actions
         Route::controller(OrderController::class)->prefix('cart')->name('cart.')->group(function () {
             Route::post('/add', 'addToCart')->name('add');
@@ -98,14 +102,22 @@ Route::middleware('auth')->group(function () {
         Route::prefix('orders')->name('orders.')->group(function () {
             Route::controller(OrderController::class)->group(function () {
                 Route::get('/my-orders', 'myOrders')->name('index');
-                Route::get('/create', 'create')->name('create');
+                
+                // Checkout Route (GET & POST)
+                Route::match(['get', 'post'], '/create', 'create')->name('create');
+                
                 Route::post('/', 'store')->name('store');
                 Route::get('/{order}', 'show')->name('show');
                 Route::patch('/{order}/cancel', 'cancel')->name('cancel');
             });
 
-            // Order Review Routes (GET for view page, POST for submission)
+            // Order Review Routes
             Route::get('/{order}/review', [OrderReviewController::class, 'create'])->name('review.create');
+            
+            // ==========================================
+            // වරද නිවැරදි කළ ස්ථානය: name('orders.review.store') වෙනුවට name('review.store') යොදා ඇත.
+            // (Group එකේ orders. තිබෙන බැවින් එය ඉබේම orders.review.store ලෙස සැකසේ)
+            // ==========================================
             Route::post('/{order}/review', [OrderReviewController::class, 'store'])->name('review.store');
         });
     });
@@ -118,7 +130,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/ingredient/{ingredient}/toggle', [KitchenController::class, 'toggleStock'])->name('toggleStock');
     });
 
-    // Staff Direct Shortcut
+    // Staff Direct Shortcut Redirect
     Route::get('/staff/dashboard', [KitchenController::class, 'index'])
         ->middleware('role:kitchen|staff')
         ->name('staff.dashboard');

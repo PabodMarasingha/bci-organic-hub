@@ -1,4 +1,5 @@
 <x-guest-layout>
+    <!-- Custom CSS Animations -->
     <style>
         @keyframes flowBeam {
             0% { stroke-dashoffset: 1000; }
@@ -10,8 +11,17 @@
         }
     </style>
 
+    <!-- MAIN LOGIN CONTAINER -->
     <div class="relative min-h-screen flex flex-col justify-center items-center bg-organic-cream dark:bg-[#05070c] px-4 sm:px-6 py-12 overflow-hidden selection:bg-organic-gold selection:text-organic-charcoal transition-colors duration-300">
 
+        <!-- Blurred Food Background -->
+        <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=1600&q=80" alt=""
+                 class="w-full h-full object-cover blur-md scale-110 opacity-25 dark:opacity-15">
+            <div class="absolute inset-0 bg-organic-cream/80 dark:bg-[#05070c]/85"></div>
+        </div>
+
+        <!-- Interactive Floating Golden Dust Particles Canvas Layer -->
         <canvas id="particles-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-0"></canvas>
 
         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-organic-green/10 rounded-full blur-[150px] pointer-events-none z-0"></div>
@@ -107,8 +117,8 @@
                     </button>
 
                     <form method="POST" action="{{ route('login') }}">
-    @csrf
-    <input type="hidden" name="role" x-model="selectedRole">
+                        @csrf
+                        <input type="hidden" name="role" x-model="selectedRole">
 
                         <div class="mb-5">
                             <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-organic-charcoal/60 dark:text-slate-400 mb-2">Email Address</label>
@@ -150,41 +160,44 @@
         </div>
     </div>
 
+    <!-- JAVASCRIPT: Floating Golden Dust Particles -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const canvas = document.getElementById('particles-canvas');
-            const ctx = canvas.getContext('2d');
-            let width = canvas.width = window.innerWidth;
-            let height = canvas.height = window.innerHeight;
-            window.addEventListener('resize', () => {
-                width = canvas.width = window.innerWidth;
-                height = canvas.height = window.innerHeight;
-            });
-            const particles = [];
-            for (let i = 0; i < 45; i++) {
-                particles.push({
-                    x: Math.random() * width, y: Math.random() * height,
-                    radius: Math.random() * 2 + 0.5,
-                    vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4,
-                    alpha: Math.random() * 0.6 + 0.2
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let width = canvas.width = window.innerWidth;
+                let height = canvas.height = window.innerHeight;
+                window.addEventListener('resize', () => {
+                    width = canvas.width = window.innerWidth;
+                    height = canvas.height = window.innerHeight;
                 });
+                const particles = [];
+                for (let i = 0; i < 45; i++) {
+                    particles.push({
+                        x: Math.random() * width, y: Math.random() * height,
+                        radius: Math.random() * 2 + 0.5,
+                        vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4,
+                        alpha: Math.random() * 0.6 + 0.2
+                    });
+                }
+                function animate() {
+                    ctx.clearRect(0, 0, width, height);
+                    const isDark = document.documentElement.classList.contains('dark');
+                    const color = isDark ? '242, 169, 59' : '31, 77, 58';
+                    particles.forEach(p => {
+                        p.x += p.vx; p.y += p.vy;
+                        if (p.x < 0) p.x = width; if (p.x > width) p.x = 0;
+                        if (p.y < 0) p.y = height; if (p.y > height) p.y = 0;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(${color}, ${p.alpha})`;
+                        ctx.fill();
+                    });
+                    requestAnimationFrame(animate);
+                }
+                animate();
             }
-            function animate() {
-                ctx.clearRect(0, 0, width, height);
-                const isDark = document.documentElement.classList.contains('dark');
-                const color = isDark ? '242, 169, 59' : '31, 77, 58';
-                particles.forEach(p => {
-                    p.x += p.vx; p.y += p.vy;
-                    if (p.x < 0) p.x = width; if (p.x > width) p.x = 0;
-                    if (p.y < 0) p.y = height; if (p.y > height) p.y = 0;
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(${color}, ${p.alpha})`;
-                    ctx.fill();
-                });
-                requestAnimationFrame(animate);
-            }
-            animate();
         });
     </script>
 </x-guest-layout>

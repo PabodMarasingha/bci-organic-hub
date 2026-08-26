@@ -23,6 +23,13 @@ class CartView extends Component
             session()->put('cart', $this->cart);
         }
     }
+    public function updateQuantity(int $index, int $quantity): void
+{
+    if (isset($this->cart[$index])) {
+        $this->cart[$index]['quantity'] = max(1, $quantity);
+        session()->put('cart', $this->cart);
+    }
+}
 
     public function clearCart(): void
     {
