@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('order_items', function (Blueprint $table) {
-            // 'product_id' column එක Database එකේ නැත්නම් පමණක් එකතු කරයි
+            
             if (!Schema::hasColumn('order_items', 'product_id')) {
                 $table->unsignedBigInteger('product_id')->nullable()->after('id');
             }

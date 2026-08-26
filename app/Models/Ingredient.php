@@ -20,9 +20,7 @@ class Ingredient extends Model
         'in_stock',
     ];
 
-    /**
-     * Stock එක සීමාවට වඩා අඩුදැයි බලන Helper Method එක
-     */
+    
     public function isLowStock(): bool
     {
         return $this->quantity <= $this->reorder_level;

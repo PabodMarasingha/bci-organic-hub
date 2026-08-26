@@ -14,11 +14,20 @@ return new class extends Migration
         Schema::create('product_items', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->text('description')->nullable(); // Seeder එකට අවශ්‍ය description column එක
-            $table->enum('category', ['salad', 'juice', 'snack'])->default('salad');
-            $table->decimal('price', 8, 2)->default(0.00); // Seeder එකට අවශ්‍ය price column එක
+            $table->text('description')->nullable(); 
+            
+           
+            $table->string('category')->nullable(); 
+            
+            $table->decimal('price', 8, 2)->default(0.00); 
             $table->decimal('base_price', 8, 2)->nullable();
-            $table->string('image')->nullable(); // Image එක සඳහා
+            
+            
+            $table->integer('base_calories')->nullable();
+            $table->decimal('average_rating', 3, 2)->default(0.00); 
+            $table->integer('reviews_count')->default(0); 
+            
+            $table->string('image')->nullable(); 
             $table->timestamps();
         });
     }

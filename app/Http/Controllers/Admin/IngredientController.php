@@ -10,7 +10,7 @@ class IngredientController extends Controller
 {
     public function index()
     {
-        // Low stock alerts ඇතුළුව Type සහ Name අනුව Sort කර ලබාගැනීම
+       
         $ingredients = Ingredient::orderBy('type')->orderBy('name')->get();
         return view('admin.ingredients', compact('ingredients'));
     }

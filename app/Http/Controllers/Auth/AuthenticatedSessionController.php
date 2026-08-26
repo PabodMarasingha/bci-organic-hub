@@ -12,17 +12,13 @@ use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
 {
-    /**
-     * Display the login view.
-     */
+    
     public function create(): View
     {
         return view('auth.login');
     }
 
-    /**
-     * Handle an incoming authentication request.
-     */
+    
     public function store(LoginRequest $request): RedirectResponse
     {
         // 1. Request Validation
@@ -35,34 +31,34 @@ class AuthenticatedSessionController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        // Role String එක Lowercase කර සකස් කිරීම
+       
         $selectedRole = strtolower(trim($request->role));
         
-        // Database එකේ 'role' column එක සහ Spatie Roles ලබා ගැනීම
+        
         $dbRole = strtolower($user->role ?? '');
         $userSpatieRoles = method_exists($user, 'getRoleNames') 
             ? $user->getRoleNames()->map(fn($r) => strtolower($r))->toArray() 
             : [];
 
-        // Role Matching Logic (Flexible Check)
+        
         $hasMatchingRole = false;
 
-        // I. Direct Match (Spatie හෝ DB Column එකට සමාන වීම)
+       
         if (in_array($selectedRole, $userSpatieRoles) || $dbRole === $selectedRole) {
             $hasMatchingRole = true;
         } 
-        // II. Delivery Role Aliases Check
+        
         elseif (in_array($selectedRole, ['delivery', 'delivery staff']) && 
                (array_intersect(['delivery', 'delivery staff'], $userSpatieRoles) || in_array($dbRole, ['delivery', 'delivery staff']))) {
             $hasMatchingRole = true;
         } 
-        // III. Kitchen / Staff Aliases Check
+        
         elseif (in_array($selectedRole, ['kitchen', 'staff']) && 
                (array_intersect(['kitchen', 'staff'], $userSpatieRoles) || in_array($dbRole, ['kitchen', 'staff']))) {
             $hasMatchingRole = true;
         }
 
-        // Role එක නොගැලපේ නම් Logout කර Error එක පෙන්වීම
+        
         if (!$hasMatchingRole) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();
@@ -73,10 +69,10 @@ class AuthenticatedSessionController extends Controller
             ])->onlyInput('email');
         }
 
-        // 3. Session Regenerate කිරීම
+        
         $request->session()->regenerate();
 
-        // 4. Dynamic Dashboard Redirection (Spatie Roles & DB Column දෙකටම සහාය දක්වයි)
+       
         if ($user->hasRole('admin') || $dbRole === 'admin') {
             return redirect()->route('admin.dashboard');
         }
@@ -89,13 +85,11 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('delivery.dashboard');
         }
 
-        // Default Customer Redirect
+        
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
-    /**
-     * Destroy an authenticated session.
-     */
+    
     public function destroy(Request $request): RedirectResponse
     {
         Auth::guard('web')->logout();

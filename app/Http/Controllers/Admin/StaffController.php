@@ -12,12 +12,10 @@ use Spatie\Permission\Models\Role;
 
 class StaffController extends Controller
 {
-    /**
-     * Display a listing of staff and system users.
-     */
+   
     public function index()
     {
-        // Spatie Roles හෝ DB role column එක පදනම් කරගෙන සියලුම Users ලා ලබා ගැනීම
+        
         $staff = User::with(['roles', 'deliveryZone'])
             ->where('role', '!=', 'customer')
             ->orWhereDoesntHave('roles', function ($q) {
@@ -32,9 +30,7 @@ class StaffController extends Controller
         return view('admin.staff', compact('staff', 'roles', 'zones'));
     }
 
-    /**
-     * Store a newly created staff account.
-     */
+    
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -58,22 +54,20 @@ class StaffController extends Controller
             'vehicle_number'   => $validated['role'] === 'delivery' ? ($validated['vehicle_number'] ?? null) : null,
         ];
 
-        // DB Table එකේ 'role' column එකක් තිබේ නම් එයටද Save කිරීම
+        
         if (Schema::hasColumn('users', 'role')) {
             $userData['role'] = strtolower($validated['role']);
         }
 
         $user = User::create($userData);
 
-        // Spatie Permission Role Assign කිරීම
+        
         $user->assignRole($validated['role']);
 
         return back()->with('success', 'User account created successfully.');
     }
 
-    /**
-     * Update the specified staff account.
-     */
+    
     public function update(Request $request, User $staff)
     {
         $validated = $request->validate([
@@ -95,12 +89,12 @@ class StaffController extends Controller
             $staff->password = Hash::make($validated['password']);
         }
 
-        // DB Table එකේ 'role' column එක Update කිරීම
+        
         if (Schema::hasColumn('users', 'role')) {
             $staff->role = strtolower($validated['role']);
         }
 
-        // Delivery details set කිරීම (Role එක 'delivery' නම් පමණි)
+       
         if ($validated['role'] === 'delivery') {
             $staff->delivery_zone_id = $validated['delivery_zone_id'] ?? null;
             $staff->vehicle_type     = $validated['vehicle_type'] ?? null;
@@ -113,15 +107,13 @@ class StaffController extends Controller
 
         $staff->save();
 
-        // Spatie Permission Role Sync කිරීම
+       
         $staff->syncRoles([$validated['role']]);
 
         return back()->with('success', 'User account updated successfully.');
     }
 
-    /**
-     * Remove the specified staff account.
-     */
+    
     public function destroy(User $staff)
     {
         $staff->delete();

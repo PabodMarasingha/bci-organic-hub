@@ -13,7 +13,7 @@ return new class extends Migration
     {
         if (Schema::hasTable('product_items')) {
             Schema::table('product_items', function (Blueprint $table) {
-                // 'after' කැබැල්ල අයින් කර ආරක්ෂිතව add කරයි
+                
                 if (!Schema::hasColumn('product_items', 'base_calories')) {
                     $table->integer('base_calories')->default(250);
                 }

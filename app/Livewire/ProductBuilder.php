@@ -11,7 +11,9 @@ use Livewire\Attributes\Layout;
 #[Layout('layouts.app')]
 class ProductBuilder extends Component
 {
+    
     public ProductItem $product;
+
     public array $selectedIngredients = [];
     public bool $selectAll = false;
     public float $runningTotal = 0.0;
@@ -22,11 +24,12 @@ class ProductBuilder extends Component
     /**
      * Component mount method.
      *
-     * @param \App\Models\ProductItem|string|int $product
+     * @param mixed $product
      * @return void
      */
     public function mount($product): void
     {
+        
         if ($product instanceof ProductItem) {
             $this->product = $product;
         } else {
@@ -39,9 +42,7 @@ class ProductBuilder extends Component
         $this->calculateTotals();
     }
 
-    /**
-     * "Select All" Toggle කළ විට ක්‍රියාත්මක වේ.
-     */
+    
     public function updatedSelectAll(bool $value): void
     {
         if ($value) {
@@ -56,9 +57,7 @@ class ProductBuilder extends Component
         $this->calculateTotals();
     }
 
-    /**
-     * තනි තනි Ingredient එකක් select/deselect කළ විට ක්‍රියාත්මක වේ.
-     */
+    
     public function updatedSelectedIngredients(): void
     {
         $allIds = $this->getAvailableIngredients()
@@ -71,9 +70,7 @@ class ProductBuilder extends Component
         $this->calculateTotals();
     }
 
-    /**
-     * Quantity එක වෙනස් වන විට ක්‍රියාත්මක වේ.
-     */
+    
     public function updatedQuantity(): void
     {
         if ($this->quantity < 1 || !is_numeric($this->quantity)) {
@@ -83,15 +80,13 @@ class ProductBuilder extends Component
         $this->calculateTotals();
     }
 
-    /**
-     * මුළු එකතුව (Price & Calories) ගණනය කිරීම.
-     */
+    
     private function calculateTotals(): void
     {
         $ingredients = Ingredient::whereIn('id', $this->selectedIngredients)->get();
 
         $basePrice = (float) ($this->product->price ?? 0.0);
-        $baseCalories = (int) ($this->product->base_calories ?? 0);
+        $baseCalories = (int) ($this->product->base_calories ?? $this->product->calories ?? 0);
 
         $extraPrice = (float) $ingredients->sum('price');
         $extraCalories = (int) $ingredients->sum('calories');
@@ -100,20 +95,17 @@ class ProductBuilder extends Component
         $this->runningCalories = (int) (($baseCalories + $extraCalories) * max(1, $this->quantity));
     }
 
-    /**
-     * Available Ingredients ලබා ගැනීම.
-     */
+    
     private function getAvailableIngredients(): Collection
     {
-        // in_stock column එක නොමැති නිසා directly සියලුම ingredients ලබා ගනී
-        return $this->product->ingredients()->exists() 
-            ? $this->product->ingredients()->get() 
-            : Ingredient::all();
+        if (method_exists($this->product, 'ingredients') && $this->product->ingredients()->exists()) {
+            return $this->product->ingredients()->get();
+        }
+
+        return Ingredient::all();
     }
 
-    /**
-     * Cart එකට Item එක එකතු කිරීම.
-     */
+   
     public function addToCart()
     {
         $this->validate([
@@ -135,15 +127,18 @@ class ProductBuilder extends Component
 
         $cart = session()->get('cart', []);
 
+        $basePrice = (float) ($this->product->price ?? 0.0);
+        $baseCalories = (int) ($this->product->base_calories ?? $this->product->calories ?? 0);
+
         $cart[] = [
             'cart_item_id' => uniqid('cart_'),
             'product_id' => $this->product->id,
             'item_name' => $this->product->name,
-            'image' => $this->product->image,
+            'image' => $this->product->image ?? $this->product->image_url ?? null,
             'quantity' => (int) $this->quantity,
-            'unit_price' => (float) ($this->product->price + $ingredients->sum('price')),
+            'unit_price' => (float) ($basePrice + $ingredients->sum('price')),
             'total_price' => (float) $this->runningTotal,
-            'unit_calories' => (int) ($this->product->base_calories + $ingredients->sum('calories')),
+            'unit_calories' => (int) ($baseCalories + $ingredients->sum('calories')),
             'total_calories' => (int) $this->runningCalories,
             'customizations' => $customizations,
             'special_instructions' => $this->specialInstructions,

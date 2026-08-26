@@ -13,33 +13,31 @@ use Illuminate\Support\Facades\Schema;
 
 class OrderOverviewController extends Controller
 {
-    /**
-     * Admin Dashboard View & Analytics Data
-     */
+   
     public function dashboard()
     {
-        // General Metrics
+        
         $totalRevenue = CustomerOrder::where('status', '!=', 'cancelled')->sum('total_amount');
         $netProfit = $totalRevenue * 0.33; // 33% Profit Estimation
         $pendingOrders = CustomerOrder::where('status', 'pending')->count();
         
-        // Low Stock Count (quantity column එක තිබේ නම් එයින්ද, නැතහොත් is_available වලින්ද ආරක්ෂිතව ගණනය කිරීම)
+        
         $lowStockCount = Schema::hasColumn('ingredients', 'quantity')
             ? Ingredient::where('quantity', '<=', 10)->count()
             : Ingredient::where('is_available', false)->count();
 
-        // Recent Orders Table Data
+        
         $recentOrders = CustomerOrder::with(['user', 'items', 'deliveryZone', 'delivery', 'payment'])
             ->latest()
             ->take(10)
             ->get();
 
-        // Safe Delivery Drivers List
+       
         $drivers = User::whereHas('roles', function ($q) {
             $q->whereIn('name', ['delivery', 'Delivery Staff', 'driver', 'Driver']);
         })->get();
 
-        // Payment Gateway Analytics Split
+        
         $cardPaymentCount = CustomerOrder::whereHas('payment', function ($q) {
             $q->where('payment_method', 'card');
         })->count();
@@ -48,7 +46,7 @@ class OrderOverviewController extends Controller
             $q->where('payment_method', 'cod');
         })->count();
 
-        // Weekly Revenue Chart Data
+        
         $startDate = now()->subDays(6)->startOfDay();
         $revenueGrouped = CustomerOrder::where('created_at', '>=', $startDate)
             ->where('status', '!=', 'cancelled')
@@ -75,9 +73,7 @@ class OrderOverviewController extends Controller
         ));
     }
 
-    /**
-     * Admin Orders Management Page
-     */
+    
     public function index(Request $request)
     {
         $query = CustomerOrder::with(['user', 'items', 'deliveryZone', 'delivery.driver', 'payment']);
@@ -92,7 +88,7 @@ class OrderOverviewController extends Controller
         $totalOrders = CustomerOrder::count();
         $pendingOrders = CustomerOrder::where('status', 'pending')->count();
 
-        // Safe Delivery Drivers List
+        
         $deliveryDrivers = User::whereHas('roles', function ($q) {
             $q->whereIn('name', ['delivery', 'Delivery Staff', 'driver', 'Driver']);
         })->get();
@@ -100,9 +96,7 @@ class OrderOverviewController extends Controller
         return view('admin.orders', compact('orders', 'totalSales', 'totalOrders', 'pendingOrders', 'deliveryDrivers'));
     }
 
-    /**
-     * Admin විසින් Order Status එක වෙනස් කිරීම
-     */
+    
     public function updateStatus(Request $request, CustomerOrder $order)
     {
         $validated = $request->validate([
@@ -128,9 +122,6 @@ class OrderOverviewController extends Controller
         return back()->with('success', 'Order status updated successfully!');
     }
 
-    /**
-     * Order එක සඳහා Delivery Driver කෙනෙක් Assign කිරීම
-     */
     public function assignDriver(Request $request, CustomerOrder $order)
     {
         $validated = $request->validate([

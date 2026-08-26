@@ -1,5 +1,5 @@
 <x-guest-layout>
-    <!-- Custom CSS Animations for Top-to-Bottom Border Glow Beam -->
+    <!-- Custom CSS Animations -->
     <style>
         /* Top-to-Bottom Symmetrical Border Glow Animation */
         @keyframes flowBeam {
@@ -11,9 +11,73 @@
             stroke-dasharray: 220 780;
             animation: flowBeam 3s linear infinite;
         }
+
+        /* Tech Cyber Rings Rotation */
+        @keyframes spinClockwise {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes spinCounterClockwise {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(-360deg); }
+        }
+
+        .animate-spin-slow {
+            animation: spinClockwise 8s linear infinite;
+        }
+
+        .animate-spin-reverse {
+            animation: spinCounterClockwise 5s linear infinite;
+        }
     </style>
 
-    <!-- Main Container with Clean Deep Dark Background -->
+    <!-- =========================================================================
+         ADVANCED TECH RADAR INTRO SPLASH SCREEN
+         ========================================================================= -->
+    <div id="intro-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#030508] text-white transition-all duration-700 ease-in-out">
+        <!-- Background Radial Pulse -->
+        <div class="absolute w-[450px] h-[450px] bg-emerald-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse"></div>
+
+        <div class="relative z-10 flex flex-col items-center text-center space-y-8">
+            
+            <!-- Tech Cyber Ring Loader with Logo in Center -->
+            <div class="relative w-36 h-36 flex items-center justify-center">
+                
+                <!-- Outer Rotating Ring -->
+                <div class="absolute inset-0 rounded-full border-2 border-dashed border-emerald-500/40 animate-spin-slow"></div>
+                
+                <!-- Middle Counter-Rotating Neon Ring -->
+                <div class="absolute inset-2 rounded-full border-2 border-t-emerald-400 border-r-transparent border-b-teal-500 border-l-transparent animate-spin-reverse shadow-[0_0_20px_rgba(16,185,129,0.3)]"></div>
+                
+                <!-- Inner Glowing Circle -->
+                <div class="w-20 h-20 bg-emerald-950/60 rounded-2xl border border-emerald-400/50 flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.4)] backdrop-blur-md">
+                    <svg class="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Title & Dynamic Subtitle -->
+            <div class="space-y-2">
+                <h1 class="text-3xl sm:text-4xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-green-500 drop-shadow-[0_0_25px_rgba(16,185,129,0.5)]">
+                    BCI ORGANIC HUB
+                </h1>
+                
+                <!-- Dynamic Status Message (Changes via JS) -->
+                <div class="flex items-center justify-center space-x-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <p id="loading-text" class="text-xs text-slate-400 uppercase tracking-[0.25em] font-mono">
+                        Connecting System...
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================================
+         MAIN LOGIN CONTAINER
+         ========================================================================= -->
     <div class="relative min-h-screen flex flex-col justify-center items-center bg-[#05070c] px-4 sm:px-6 py-12 overflow-hidden selection:bg-emerald-500 selection:text-white">
         
         <!-- Interactive Floating Dust Particles Canvas Layer -->
@@ -141,9 +205,36 @@
         </div>
     </div>
 
-    <!-- JavaScript for Floating Glow Dust Particles -->
+    <!-- =========================================================================
+         JAVASCRIPT CONTROLLERS
+         ========================================================================= -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+
+            // 1. INTRO RADAR LOGIC
+            const introScreen = document.getElementById('intro-screen');
+            const loadingText = document.getElementById('loading-text');
+            
+            if (!sessionStorage.getItem('bci_intro_shown')) {
+                // Changing text dynamically to feel like a real tech boot
+                setTimeout(() => { if(loadingText) loadingText.innerText = 'Loading Modules...'; }, 800);
+                setTimeout(() => { if(loadingText) loadingText.innerText = 'System Ready...'; }, 1700);
+
+                // Fade out intro after 2.5 seconds
+                setTimeout(() => {
+                    introScreen.classList.add('opacity-0', 'pointer-events-none');
+                    
+                    setTimeout(() => {
+                        introScreen.remove();
+                    }, 700);
+
+                    sessionStorage.setItem('bci_intro_shown', 'true');
+                }, 2500);
+            } else {
+                introScreen.remove();
+            }
+
+            // 2. FLOATING GLOW DUST PARTICLES LOGIC
             const canvas = document.getElementById('particles-canvas');
             const ctx = canvas.getContext('2d');
 

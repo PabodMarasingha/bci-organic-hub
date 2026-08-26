@@ -18,7 +18,7 @@ return new class extends Migration
             $table->integer('calories')->default(0);
             $table->decimal('price', 8, 2)->default(0.00);
             $table->text('description')->nullable();
-            $table->string('image')->nullable(); // Product Image එක සඳහා එකතු කරන ලදී
+            $table->string('image')->nullable(); 
             $table->timestamps();
         });
     }
