@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\CustomerOrder;
 use App\Models\Delivery;
 use App\Models\Ingredient;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,18 +16,24 @@ use Illuminate\View\View;
 class KitchenController extends Controller
 {
     /**
-     * Display live kitchen orders, ready orders, and ingredient stock management.
+     * Display live kitchen orders, ready orders, ingredient stock, metrics, and drivers.
      */
     public function index(): View
     {
-        // 1. Live Orders in progress (Pending, Processing, Preparing)
-        $orders = CustomerOrder::with(['items', 'user'])
+        // 1. Check if 'driver' relationship exists on CustomerOrder model to avoid RelationNotFoundException
+        $orderRelations = ['items', 'user'];
+        if (method_exists(CustomerOrder::class, 'driver')) {
+            $orderRelations[] = 'driver';
+        }
+
+        // Live Orders in progress (Pending, Processing, Preparing)
+        $orders = CustomerOrder::with($orderRelations)
             ->whereIn('status', ['pending', 'processing', 'preparing'])
             ->orderBy('created_at', 'asc')
             ->get();
 
         // 2. Completed / Ready Orders
-        $readyOrders = CustomerOrder::with(['items', 'user'])
+        $readyOrders = CustomerOrder::with($orderRelations)
             ->where('status', 'ready')
             ->orderBy('updated_at', 'desc')
             ->take(30)
@@ -34,24 +42,69 @@ class KitchenController extends Controller
         // 3. Ingredient Stock Data
         $ingredients = Ingredient::orderBy('name', 'asc')->get();
 
-        return view('kitchen.index', compact('orders', 'readyOrders', 'ingredients'));
+        // 4. Active Delivery Drivers List
+        $drivers = User::whereIn('role', ['driver', 'delivery'])->get();
+
+        // 5. Kitchen Analytics & Order Metrics Calculation
+        $todayOrdersCount = CustomerOrder::whereDate('created_at', Carbon::today())->count();
+
+        // Average Preparation Time Calculation for 'ready' orders today
+        $completedToday = CustomerOrder::whereDate('created_at', Carbon::today())
+            ->where('status', 'ready')
+            ->get();
+
+        $avgPrepTime = 0;
+        if ($completedToday->count() > 0) {
+            $totalMinutes = $completedToday->sum(function ($order) {
+                return Carbon::parse($order->created_at)->diffInMinutes(Carbon::parse($order->updated_at));
+            });
+            $avgPrepTime = (int) round($totalMinutes / $completedToday->count());
+        }
+
+        // Out of Stock Ingredients Count
+        $outOfStockCount = Ingredient::where('in_stock', false)->count();
+
+        return view('kitchen.index', compact(
+            'orders', 
+            'readyOrders', 
+            'ingredients', 
+            'drivers', 
+            'todayOrdersCount', 
+            'avgPrepTime', 
+            'outOfStockCount'
+        ));
     }
 
     /**
-     * Update order status, deduct ingredient stock, and sync delivery status.
+     * Update order status, assign delivery driver, deduct stock, and sync delivery status.
      */
     public function updateStatus(Request $request, CustomerOrder $order): RedirectResponse
     {
         $validated = $request->validate([
-            'status' => 'required|string|in:pending,processing,preparing,ready,out_for_delivery,delivered,cancelled',
+            'status'    => 'required|string|in:pending,processing,preparing,ready,out_for_delivery,delivered,cancelled',
+            'driver_id' => 'nullable|exists:users,id',
         ]);
 
         $previousStatus = $order->status;
-        $newStatus = $validated['status'];
+        $newStatus      = $validated['status'];
+        $driverId       = $request->input('driver_id');
 
-        DB::transaction(function () use ($order, $previousStatus, $newStatus) {
-            // Update Order Status
-            $order->update(['status' => $newStatus]);
+        DB::transaction(function () use ($order, $previousStatus, $newStatus, $driverId) {
+            // Data array to update order
+            $updateData = ['status' => $newStatus];
+
+            // Assign driver if provided and column exists
+            if ($driverId && Schema::hasColumn('customer_orders', 'driver_id')) {
+                $updateData['driver_id'] = $driverId;
+                
+                // Update Driver status to 'on_delivery'
+                if (Schema::hasColumn('users', 'driver_status')) {
+                    User::where('id', $driverId)->update(['driver_status' => 'on_delivery']);
+                }
+            }
+
+            // Update Customer Order
+            $order->update($updateData);
 
             // Deduct ingredient stock automatically when order transitions to 'ready'
             if ($newStatus === 'ready' && $previousStatus !== 'ready') {
@@ -76,14 +129,12 @@ class KitchenController extends Controller
                                 }
 
                                 if ($ingredientName) {
-                                    // Match ingredient in database
                                     $ingredient = Ingredient::where('name', 'LIKE', '%' . trim($ingredientName) . '%')->first();
 
                                     if ($ingredient && Schema::hasColumn('ingredients', 'quantity')) {
                                         $deductQty = $item->quantity ?? 1;
                                         $ingredient->decrement('quantity', $deductQty);
 
-                                        // Set out of stock if quantity falls to zero or below
                                         if ($ingredient->fresh()->quantity <= 0 && Schema::hasColumn('ingredients', 'in_stock')) {
                                             $ingredient->update(['in_stock' => false]);
                                         }
@@ -103,15 +154,21 @@ class KitchenController extends Controller
                 $delivery = Delivery::where($orderCol, $order->id)->first();
 
                 if ($newStatus === 'ready') {
+                    $deliveryData = [
+                        $orderCol  => $order->id,
+                        $statusCol => 'unassigned',
+                    ];
+
+                    if ($driverId && Schema::hasColumn('deliveries', 'driver_id')) {
+                        $deliveryData['driver_id'] = $driverId;
+                        $deliveryData[$statusCol]  = 'assigned';
+                    }
+
                     if (!$delivery) {
-                        Delivery::create([
-                            $orderCol  => $order->id,
-                            $statusCol => 'unassigned',
-                        ]);
+                        Delivery::create($deliveryData);
                     } else {
-                        // Ensure status is valid for Delivery Dashboard
-                        if (in_array($delivery->{$statusCol}, ['pending', 'cancelled', null])) {
-                            $delivery->update([$statusCol => 'unassigned']);
+                        if (in_array($delivery->{$statusCol}, ['pending', 'unassigned', 'cancelled', null])) {
+                            $delivery->update($deliveryData);
                         }
                     }
                 } elseif ($newStatus === 'out_for_delivery') {
@@ -126,9 +183,11 @@ class KitchenController extends Controller
             }
         });
 
+        $formattedStatus = strtoupper(str_replace('_', ' ', $newStatus));
+
         return back()
-            ->with('message', "Order #{$order->id} status updated to '{$newStatus}'.")
-            ->with('success', "Order #{$order->id} status updated to '{$newStatus}'.");
+            ->with('message', "Order #{$order->id} status updated to '{$formattedStatus}'.")
+            ->with('success', "Order #{$order->id} status updated to '{$formattedStatus}'.");
     }
 
     /**

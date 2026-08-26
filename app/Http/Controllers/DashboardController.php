@@ -15,14 +15,12 @@ class DashboardController extends Controller
         /** @var User|null $user */
         $user = Auth::user();
 
-        // Safety Check: User ලොග් වී නැත්නම් Login පිටුවට යොමු කිරීම
+        
         if (!$user) {
             return redirect()->route('login');
         }
 
-        // ==========================================
-        // 1. Role එක අනුව Smart Auto-Redirect Logics
-        // ==========================================
+        
 
         if ($user->hasAnyRole(['admin', 'Admin'])) {
             return redirect()->route('admin.dashboard');
@@ -36,9 +34,7 @@ class DashboardController extends Controller
             return redirect()->route('delivery.dashboard');
         }
 
-        // ==========================================
-        // 2. Customer සඳහා Data Prep
-        // ==========================================
+        
 
         $userId = $user->id;
         $activeStatuses = ['pending', 'preparing', 'ready', 'on_delivery', 'processing'];

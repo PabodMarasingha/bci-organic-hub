@@ -19,6 +19,12 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable, HasRoles;
 
+    // System Roles Constants
+    public const ROLE_ADMIN = 'ADMIN';
+    public const ROLE_DELIVERY = 'DELIVERY';
+    public const ROLE_CUSTOMER = 'CUSTOMER';
+    public const ROLE_KITCHEN = 'KITCHEN';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -60,6 +66,29 @@ class User extends Authenticatable
             'password'          => 'hashed',
             'rating_points'     => 'integer', // Rating points integer ලෙස cast කර ඇත
         ];
+    }
+
+    /**
+     * Helper methods to check user roles easily
+     */
+    public function isAdmin(): bool
+    {
+        return strtoupper($this->role) === self::ROLE_ADMIN;
+    }
+
+    public function isDelivery(): bool
+    {
+        return strtoupper($this->role) === self::ROLE_DELIVERY;
+    }
+
+    public function isKitchen(): bool
+    {
+        return in_array(strtoupper($this->role), [self::ROLE_KITCHEN, 'STAFF']);
+    }
+
+    public function isCustomer(): bool
+    {
+        return strtoupper($this->role) === self::ROLE_CUSTOMER;
     }
 
     /**

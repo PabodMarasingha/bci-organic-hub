@@ -12,9 +12,7 @@ class FoodItem extends Model
 
     protected $guarded = [];
 
-    /**
-     * Food item එකක් සෑදීමට අවශ්‍ය අමුද්‍රව්‍ය (Ingredients) ලබා ගැනීම
-     */
+   
     public function ingredients(): BelongsToMany
     {
         return $this->belongsToMany(Ingredient::class, 'food_item_ingredient')

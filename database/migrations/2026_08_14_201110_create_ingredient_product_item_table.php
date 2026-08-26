@@ -13,8 +13,8 @@ return new class extends Migration
             $table->foreignId('product_item_id')->constrained()->onDelete('cascade');
             $table->foreignId('ingredient_id')->constrained()->onDelete('cascade');
             
-            // Meals Customize කිරීමට අදාළ Extra Data
-            $table->boolean('is_default')->default(true); // Base meal එකේ මුලින්ම තියෙන එකක්ද?
+            
+            $table->boolean('is_default')->default(true);
             $table->integer('quantity')->default(1);
             $table->timestamps();
         });

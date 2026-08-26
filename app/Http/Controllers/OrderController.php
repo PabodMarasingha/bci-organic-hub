@@ -169,21 +169,21 @@ class OrderController extends Controller
             return redirect()->route('menu')->withErrors(['cart' => 'Your cart is empty.']);
         }
 
-        // Cart page එකේ Checkbox මඟින් Select කළ Items Filter කිරීම
+        
         if ($request->isMethod('post') && $request->has('selected_items')) {
             $selectedIndices = $request->input('selected_items', []);
             
-            // පරිශීලකයා select කළ items පමණක් session cart එකෙන් වෙන් කරයි
+            
             $cart = array_intersect_key($cart, array_flip($selectedIndices));
 
             if (empty($cart)) {
                 return redirect()->route('cart')->withErrors(['cart' => 'Please select at least one item to proceed.']);
             }
 
-            // Processing සඳහා තෝරාගත් Items Temporary Session එකක ගබඩා කිරීම
+            
             Session::put('checkout_items', $cart);
         } else {
-            // GET request එකකදී standard cart එක හෝ session එකේ ඇති checkout_items ලබා ගනී
+            
             $cart = Session::get('checkout_items', $cart);
         }
 
@@ -211,7 +211,7 @@ class OrderController extends Controller
             'card_cvc'             => 'required_if:payment_method,card|nullable|string|max:4',
         ]);
 
-        // Selected Items ඇති නම් එයින්ද, නැතහොත් ප්‍රධාන Cart එකෙන්ද දත්ත ගනී
+        
         $cart = Session::get('checkout_items', Session::get('cart', []));
 
         if (empty($cart)) {
@@ -284,12 +284,12 @@ class OrderController extends Controller
                 return $order;
             });
 
-            // Order එක සාර්ථක වූ පසු Select කර ගෙවූ Items Cart එකෙන් ඉවත් කරයි
+            
             if (Session::has('checkout_items')) {
                 $fullCart = Session::get('cart', []);
                 $checkoutItems = Session::get('checkout_items', []);
 
-                // Order කළ Items ප්‍රධාන cart එකෙන් අයින් කිරීම
+                
                 $updatedCart = array_filter($fullCart, function ($key) use ($checkoutItems) {
                     return !array_key_exists($key, $checkoutItems);
                 }, ARRAY_FILTER_USE_KEY);
@@ -316,7 +316,7 @@ class OrderController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        // Review දත්ත ද සමඟ Eager Load කිරීම
+        
         $order->load(['items.product', 'payment', 'delivery.driver', 'deliveryZone', 'review']);
 
         return view('customers.orders.show', compact('order'));
@@ -327,7 +327,7 @@ class OrderController extends Controller
      */
     public function myOrders(Request $request)
     {
-        // Customer Order History එකෙහි Review දත්ත Eager Load කිරීම
+        
         $orders = CustomerOrder::with(['items.product', 'deliveryZone', 'delivery.driver', 'review'])
             ->where('user_id', $request->user()->id)
             ->latest()

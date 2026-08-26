@@ -115,6 +115,44 @@
                             <p class="text-xs text-slate-400 mt-2 line-clamp-2 leading-relaxed">
                                 {{ $product->description ?? 'Nutritious organic meal prepared fresh upon order with balanced protein and macros.' }}
                             </p>
+
+                            <!-- ========================================== -->
+                            <!-- PERFECTLY CLIPPED STAR RATING DISPLAY      -->
+                            <!-- ========================================== -->
+                            <div class="flex items-center gap-2.5 mt-4">
+                                <!-- Star Visual Container -->
+                                <div class="relative inline-block text-slate-500 text-sm">
+                                    <!-- Background Stars (Empty) -->
+                                    <div class="flex gap-1">
+                                        @for ($i = 0; $i < 5; $i++)
+                                            <!-- shrink-0 අනිවාර්යයෙන්ම තිබිය යුතුය -->
+                                            <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                                            </svg>
+                                        @endfor
+                                    </div>
+                                    
+                                    <!-- Foreground Stars Container (Clipped using overflow-hidden) -->
+                                    <div class="absolute top-0 left-0 overflow-hidden h-full" 
+                                         style="width: {{ (($product->average_rating ?? 0) / 5) * 100 }}%;">
+                                        <!-- w-max දමා තරු මිරිකීම වැළැක්වීම -->
+                                        <div class="flex gap-1 w-max text-amber-400">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                                                </svg>
+                                            @endfor
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Text Rating Display -->
+                                <div class="flex items-baseline gap-1">
+                                    <span class="text-xs font-black text-slate-200">{{ number_format($product->average_rating ?? 0, 1) }} <span class="text-[10px] text-slate-500 font-bold">/ 5</span></span>
+                                    <span class="text-[10px] font-medium text-slate-500">({{ $product->reviews_count ?? 0 }})</span>
+                                </div>
+                            </div>
+                            <!-- ========================================== -->
                         </div>
 
                         <!-- Action Buttons -->

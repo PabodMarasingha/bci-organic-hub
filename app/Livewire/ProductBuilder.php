@@ -3,7 +3,6 @@
 namespace App\Livewire;
 
 use App\Models\Ingredient;
-use App\Models\Product;
 use App\Models\ProductItem;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
@@ -12,10 +11,8 @@ use Livewire\Attributes\Layout;
 #[Layout('layouts.app')]
 class ProductBuilder extends Component
 {
-    /**
-     * @var \App\Models\Product|\App\Models\ProductItem|mixed
-     */
-    public $product;
+    
+    public ProductItem $product;
 
     public array $selectedIngredients = [];
     public bool $selectAll = false;
@@ -32,18 +29,11 @@ class ProductBuilder extends Component
      */
     public function mount($product): void
     {
-        if ($product instanceof Product || $product instanceof ProductItem) {
+        
+        if ($product instanceof ProductItem) {
             $this->product = $product;
         } else {
-            if (class_exists(ProductItem::class)) {
-                $this->product = ProductItem::find($product) ?? (class_exists(Product::class) ? Product::find($product) : null);
-            } else {
-                $this->product = Product::find($product);
-            }
-
-            if (!$this->product) {
-                abort(404, 'Product not found.');
-            }
+            $this->product = ProductItem::findOrFail($product);
         }
         
         $this->selectedIngredients = [];
@@ -52,9 +42,7 @@ class ProductBuilder extends Component
         $this->calculateTotals();
     }
 
-    /**
-     * "Select All" Toggle කළ විට ක්‍රියාත්මක වේ.
-     */
+    
     public function updatedSelectAll(bool $value): void
     {
         if ($value) {
@@ -69,9 +57,7 @@ class ProductBuilder extends Component
         $this->calculateTotals();
     }
 
-    /**
-     * තනි තනි Ingredient එකක් select/deselect කළ විට ක්‍රියාත්මක වේ.
-     */
+    
     public function updatedSelectedIngredients(): void
     {
         $allIds = $this->getAvailableIngredients()
@@ -84,9 +70,7 @@ class ProductBuilder extends Component
         $this->calculateTotals();
     }
 
-    /**
-     * Quantity එක වෙනස් වන විට ක්‍රියාත්මක වේ.
-     */
+    
     public function updatedQuantity(): void
     {
         if ($this->quantity < 1 || !is_numeric($this->quantity)) {
@@ -96,9 +80,7 @@ class ProductBuilder extends Component
         $this->calculateTotals();
     }
 
-    /**
-     * මුළු එකතුව (Price & Calories) ගණනය කිරීම.
-     */
+    
     private function calculateTotals(): void
     {
         $ingredients = Ingredient::whereIn('id', $this->selectedIngredients)->get();
@@ -113,9 +95,7 @@ class ProductBuilder extends Component
         $this->runningCalories = (int) (($baseCalories + $extraCalories) * max(1, $this->quantity));
     }
 
-    /**
-     * Available Ingredients ලබා ගැනීම.
-     */
+    
     private function getAvailableIngredients(): Collection
     {
         if (method_exists($this->product, 'ingredients') && $this->product->ingredients()->exists()) {
@@ -125,9 +105,7 @@ class ProductBuilder extends Component
         return Ingredient::all();
     }
 
-    /**
-     * Cart එකට Item එක එකතු කිරීම.
-     */
+   
     public function addToCart()
     {
         $this->validate([

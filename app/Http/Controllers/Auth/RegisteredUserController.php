@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\DeliveryZone; // DeliveryZone Model එක Import කර ඇත
+use App\Models\DeliveryZone; 
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,7 +22,6 @@ class RegisteredUserController extends Controller
      */
     public function create(): View
     {
-        // View එකට Delivery Zones ලබා දීම (Model එක නොමැති නම් Empty Collection එකක් යවයි)
         $deliveryZones = class_exists(DeliveryZone::class) ? DeliveryZone::all() : collect();
 
         return view('auth.register', compact('deliveryZones'));
@@ -35,7 +34,6 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        // 1. Form Validation (Delivery Data Role එක 'delivery' වන විට පරීක්ෂා කෙරේ)
         $request->validate([
             'name'             => ['required', 'string', 'max:255'],
             'email'            => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
@@ -49,8 +47,18 @@ class RegisteredUserController extends Controller
             'vehicle_number'   => ['nullable', 'required_if:role,delivery', 'string', 'max:50'],
         ]);
 
-        // Role එක Delivery ද යන්න පරීක්ෂාව
         $isDelivery = in_array($request->role, ['delivery', 'Delivery Staff']);
+
+        // === අලුතින් Type කළ Zone එකක් නම් එය Database එකට Save කර ID එක ලබාගැනීම ===
+        $deliveryZoneId = $request->delivery_zone_id;
+
+        if ($isDelivery && !empty($deliveryZoneId) && !is_numeric($deliveryZoneId)) {
+            $newZone = DeliveryZone::firstOrCreate([
+                'name' => $deliveryZoneId
+            ]);
+            $deliveryZoneId = $newZone->id; // හැදුණු අලුත් Zone එකේ ID එක මෙතැනින් ගනී
+        }
+        // ==============================================================================
 
         // 2. User Creation
         $user = User::query()->create([
@@ -58,7 +66,7 @@ class RegisteredUserController extends Controller
             'email'            => $request->email,
             'password'         => Hash::make($request->password),
             'phone_number'     => $isDelivery ? $request->phone_number : null,
-            'delivery_zone_id' => $isDelivery ? $request->delivery_zone_id : null,
+            'delivery_zone_id' => $isDelivery ? $deliveryZoneId : null, // <-- නිවැරදි ID එක මෙතැනට ලබාදේ
             'vehicle_type'     => $isDelivery ? $request->vehicle_type : null,
             'vehicle_number'   => $isDelivery ? $request->vehicle_number : null,
         ]);

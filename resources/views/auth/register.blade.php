@@ -1,5 +1,8 @@
 <x-guest-layout>
-    <!-- Custom CSS Animations for Top-to-Bottom Border Glow Beam -->
+    <!-- Tom Select CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+    
+    <!-- Custom CSS Animations & Tom Select Dark Theme Overrides -->
     <style>
         @keyframes flowBeam {
             0% { stroke-dashoffset: 1200; }
@@ -10,9 +13,58 @@
             stroke-dasharray: 220 980;
             animation: flowBeam 3s linear infinite;
         }
+
+        /* --- BCI Organic Hub - Dark Theme Overrides for Tom Select --- */
+        .ts-control, .ts-wrapper.single.input-active .ts-control {
+            background-color: #141a26 !important;
+            border: 1px solid rgba(51, 65, 85, 0.7) !important;
+            color: #f1f5f9 !important;
+            border-radius: 0.75rem !important;
+            padding: 0.875rem !important;
+            box-shadow: none !important;
+            font-size: 0.875rem !important;
+            transition: all 0.2s ease;
+        }
+        .ts-wrapper.single.focus .ts-control {
+            border-color: #10b981 !important;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.5) !important;
+        }
+        .ts-dropdown {
+            background-color: #141a26 !important;
+            border: 1px solid rgba(51, 65, 85, 0.7) !important;
+            color: #f1f5f9 !important;
+            border-radius: 0.75rem !important;
+            margin-top: 6px;
+            overflow: hidden;
+            font-size: 0.875rem !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+        }
+        .ts-dropdown .option, .ts-dropdown .create {
+            padding: 0.75rem 1rem !important;
+            transition: background-color 0.2s ease;
+        }
+        .ts-dropdown .option.active, .ts-dropdown .option:hover, .ts-dropdown .create:hover {
+            background-color: #1e293b !important;
+            color: #34d399 !important;
+        }
+        .ts-control > input {
+            color: #f1f5f9 !important;
+            font-size: 0.875rem !important;
+        }
+        .ts-wrapper.single .ts-control:after {
+            border-color: #94a3b8 transparent transparent transparent !important;
+        }
+        .ts-wrapper.single.dropdown-active .ts-control:after {
+            border-color: transparent transparent #94a3b8 transparent !important;
+        }
+        /* Custom highlight for newly created typed items */
+        .ts-dropdown .create {
+            color: #10b981 !important;
+            font-weight: bold;
+        }
     </style>
 
-    <!-- Alpine.js CDN for Dynamic Role Toggle -->
+    <!-- Alpine.js CDN -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <!-- Main Container -->
@@ -79,7 +131,7 @@
                 <form method="POST" action="{{ route('register') }}">
                     @csrf
 
-                    <!-- Select Role Field (x-model added) -->
+                    <!-- Select Role Field -->
                     <div class="mb-4">
                         <label for="role" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Select Role</label>
                         <select id="role" name="role" x-model="selectedRole" required 
@@ -125,8 +177,8 @@
                         <x-input-error :messages="$errors->get('password_confirmation')" class="mt-1.5 text-red-400 text-xs" />
                     </div>
 
-                    <!-- Dynamic Delivery Specific Fields (Only visible when role is 'delivery') -->
-                    <div x-show="selectedRole === 'delivery'" 
+                    <!-- Dynamic Delivery Specific Fields -->
+                    <div x-show="selectedRole === 'delivery'" x-cloak
                          x-transition:enter="transition ease-out duration-300"
                          x-transition:enter-start="opacity-0 transform -translate-y-2"
                          x-transition:enter-end="opacity-100 transform translate-y-0"
@@ -145,14 +197,13 @@
                             <x-input-error :messages="$errors->get('phone_number')" class="mt-1.5 text-red-400 text-xs" />
                         </div>
 
-                        <!-- Delivery Zone -->
-                        <div>
+                        <!-- Delivery Zone (Professional Search & Add) -->
+                        <div class="relative" wire:ignore>
                             <label for="delivery_zone_id" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Delivery Zone</label>
-                            <select id="delivery_zone_id" name="delivery_zone_id" 
-                                class="w-full bg-[#141a26] border border-slate-700/70 text-slate-100 text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 block p-3.5 transition duration-200 outline-none cursor-pointer">
-                                <option value="" disabled selected class="bg-[#0b0f19] text-slate-500">Select Zone</option>
+                            <select id="delivery_zone_id" name="delivery_zone_id" class="w-full" placeholder="Type to search or add zone...">
+                                <option value="">Select or Type a Zone...</option>
                                 @foreach($deliveryZones ?? [] as $zone)
-                                    <option value="{{ $zone->id }}" class="bg-[#0b0f19] text-slate-100" {{ old('delivery_zone_id') == $zone->id ? 'selected' : '' }}>
+                                    <option value="{{ $zone->id }}" {{ old('delivery_zone_id') == $zone->id ? 'selected' : '' }}>
                                         {{ $zone->name }}
                                     </option>
                                 @endforeach
@@ -192,9 +243,32 @@
         </div>
     </div>
 
-    <!-- JavaScript for Floating Glow Dust Particles -->
+    <!-- Tom Select JS -->
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+
+    <!-- JavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- 1. Initialize Tom Select (Allowing creation of new typed options) ---
+            if (document.getElementById('delivery_zone_id')) {
+                new TomSelect("#delivery_zone_id", {
+                    create: true, // මෙතැන 'true' කළ නිසා දැන් Type කරන ඕනෑම එකක් Save වේවි
+                    createOnBlur: true, // Click නොකර එළියට ගියත් Type කරපු එක Save වෙනවා
+                    sortField: {
+                        field: "text",
+                        direction: "asc"
+                    },
+                    placeholder: "Type to search or add zone...",
+                    render: {
+                        option_create: function(data, escape) {
+                            return '<div class="create">Add new zone: <strong>' + escape(data.input) + '</strong></div>';
+                        }
+                    }
+                });
+            }
+
+            // --- 2. Particles Animation ---
             const canvas = document.getElementById('particles-canvas');
             const ctx = canvas.getContext('2d');
 

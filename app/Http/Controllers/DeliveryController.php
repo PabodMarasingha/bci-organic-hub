@@ -27,10 +27,10 @@ class DeliveryController extends Controller
         $user = $request->user();
         $statusColumn = $this->getStatusColumn();
 
-        // Drivers Zone ID ලබා ගැනීම
+        
         $zoneId = $user->delivery_zone_id ?? $user->deliveryProfile->delivery_zone_id ?? null;
 
-        // Active Deliveries Query කිරීම (Review / Ratings එකතු කර ඇත)
+        
         $query = Delivery::with([
             'customerOrder.user', 
             'customerOrder.deliveryZone', 
@@ -45,7 +45,7 @@ class DeliveryController extends Controller
         ])
         ->whereIn($statusColumn, ['unassigned', 'assigned', 'picked_up', 'out_for_delivery', 'pending']);
 
-        // Driver assign වී නැති හෝ මෙම Driver ට assign වූ Orders පමණක් Filter කිරීම
+        
         if (Schema::hasColumn('deliveries', 'driver_id')) {
             $query->where(function ($q) use ($user) {
                 $q->whereNull('driver_id')
@@ -53,7 +53,7 @@ class DeliveryController extends Controller
             });
         }
 
-        // Zone ID එකක් තිබේ නම් පමණක් Zone filter කිරීම
+        
         if ($zoneId) {
             $query->where(function ($q) use ($zoneId) {
                 $q->whereHas('customerOrder', function ($sub) use ($zoneId) {
@@ -67,7 +67,7 @@ class DeliveryController extends Controller
 
         $deliveries = $query->latest()->get();
 
-        // අද දින Delivered කරන ලද දත්ත Query කිරීම
+        
         $todayDeliveriesQuery = Delivery::where($statusColumn, 'delivered')
             ->whereDate('delivered_at', today());
 
@@ -77,7 +77,7 @@ class DeliveryController extends Controller
 
         $completedTodayCount = $todayDeliveriesQuery->count();
 
-        // අද දින එකතු කළ මුළු මුදල (Card + COD සියල්ලම එකතු කිරීම)
+        
         $totalCollectedToday = $todayDeliveriesQuery->get()->sum(function ($delivery) {
             $order = $delivery->customerOrder ?? $delivery->order;
             if (!$order) return 0;
@@ -110,14 +110,14 @@ class DeliveryController extends Controller
         ])
         ->where($statusColumn, 'delivered');
 
-        // Driver ට අදාළ Log පමණක් Filter කිරීම
+        
         if ($user && Schema::hasColumn('deliveries', 'driver_id')) {
             $query->where('driver_id', $user->id);
         }
 
         $deliveries = $query->latest('delivered_at')->get();
 
-        // 1. අද දින Delivered කළ සියලුම Order වල එකතුව (Card + COD)
+        
         $totalCollectedToday = $deliveries->filter(function ($delivery) {
             if (!$delivery->delivered_at) return false;
             return \Carbon\Carbon::parse($delivery->delivered_at)->isToday();
@@ -161,7 +161,7 @@ class DeliveryController extends Controller
         $user = $request->user();
         $statusColumn = $this->getStatusColumn();
 
-        // DB Transaction එකක් ඇතුළත Updates සිදු කිරීම
+       
         DB::transaction(function () use ($delivery, $statusInput, $statusColumn, $user) {
             $updateData = [
                 $statusColumn  => $statusInput,
@@ -177,7 +177,7 @@ class DeliveryController extends Controller
 
             $delivery->update($updateData);
 
-            // Parent Order එක Synchronize කිරීම
+            
             $order = $delivery->customerOrder ?? $delivery->order;
 
             if ($order) {
@@ -201,19 +201,19 @@ class DeliveryController extends Controller
                         $orderUpdates['status'] = 'completed';
                     }
 
-                    // COD නම් Cash Collected කරගත් බව Mark කිරීම
+                    
                     if ($isCod && Schema::hasColumn($orderTable, 'is_cash_collected')) {
                         $orderUpdates['is_cash_collected'] = true;
                     }
 
                     $order->update($orderUpdates);
 
-                    // Order Payment Status එක 'paid' ලෙස වෙනස් කිරීම
+                    
                     if (method_exists($order, 'payment') && $order->payment) {
                         $order->payment->update(['payment_status' => 'paid']);
                     }
 
-                    // Driver ට Points එකතු කිරීම (+10 Points)
+                    
                     if ($user) {
                         if (Schema::hasColumn('users', 'points')) {
                             $user->increment('points', 10);
