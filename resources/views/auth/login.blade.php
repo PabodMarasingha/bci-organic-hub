@@ -30,6 +30,16 @@
         .animate-spin-reverse {
             animation: spinCounterClockwise 5s linear infinite;
         }
+
+        /* Logo Floating Animation */
+        @keyframes floatLogo {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .animate-float-logo {
+            animation: floatLogo 3s ease-in-out infinite;
+        }
     </style>
 
     <!-- =========================================================================
@@ -41,8 +51,8 @@
 
         <div class="relative z-10 flex flex-col items-center text-center space-y-8">
             
-            <!-- Tech Cyber Ring Loader with Logo in Center -->
-            <div class="relative w-36 h-36 flex items-center justify-center">
+            <!-- Tech Cyber Ring Loader with SVG Logo in Center -->
+            <div class="relative w-40 h-40 flex items-center justify-center">
                 
                 <!-- Outer Rotating Ring -->
                 <div class="absolute inset-0 rounded-full border-2 border-dashed border-emerald-500/40 animate-spin-slow"></div>
@@ -50,10 +60,22 @@
                 <!-- Middle Counter-Rotating Neon Ring -->
                 <div class="absolute inset-2 rounded-full border-2 border-t-emerald-400 border-r-transparent border-b-teal-500 border-l-transparent animate-spin-reverse shadow-[0_0_20px_rgba(16,185,129,0.3)]"></div>
                 
-                <!-- Inner Glowing Circle -->
-                <div class="w-20 h-20 bg-emerald-950/60 rounded-2xl border border-emerald-400/50 flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.4)] backdrop-blur-md">
-                    <svg class="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                <!-- Inner Glowing Pure SVG Logo (No Image Needed!) -->
+                <div class="w-24 h-24 bg-emerald-950/60 rounded-full border border-emerald-400/50 flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.4)] backdrop-blur-md animate-pulse">
+                    <svg viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-14 h-14 drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]">
+                        <defs>
+                            <linearGradient id="bciGradIntro" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#34d399" />
+                                <stop offset="100%" stop-color="#10b981" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M60 20 L20 30 L20 75 C20 105 45 125 60 135 C75 125 100 105 100 75 L100 30 Z" stroke="url(#bciGradIntro)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M60 20 C45 5 30 15 50 35 C52 28 55 22 60 20 Z" fill="url(#bciGradIntro)"/>
+                        <path d="M60 20 C75 -2 95 10 70 35 C68 28 65 22 60 20 Z" fill="url(#bciGradIntro)"/>
+                        <path d="M60 135 L60 100" stroke="url(#bciGradIntro)" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M60 120 C45 100 40 85 55 80 C55 90 58 110 60 120 Z" fill="url(#bciGradIntro)"/>
+                        <path d="M60 120 C75 100 80 85 65 80 C65 90 62 110 60 120 Z" fill="url(#bciGradIntro)"/>
+                        <text x="60" y="78" font-family="Arial, sans-serif" font-weight="900" font-size="34" fill="url(#bciGradIntro)" text-anchor="middle" letter-spacing="1">BCI</text>
                     </svg>
                 </div>
             </div>
@@ -87,8 +109,27 @@
         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-emerald-500/10 rounded-full blur-[150px] pointer-events-none z-0"></div>
         <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-teal-500/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
 
-        <!-- System Title -->
-        <div class="relative z-10 mb-8 text-center">
+        <!-- System Title & Animated Logo -->
+        <div class="relative z-10 mb-8 flex flex-col items-center text-center">
+            <!-- Floating Pure SVG Logo -->
+            <div class="animate-float-logo mb-4">
+                <svg viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-20 h-20 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]">
+                    <defs>
+                        <linearGradient id="bciGradMain" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#34d399" />
+                            <stop offset="100%" stop-color="#10b981" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M60 20 L20 30 L20 75 C20 105 45 125 60 135 C75 125 100 105 100 75 L100 30 Z" stroke="url(#bciGradMain)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M60 20 C45 5 30 15 50 35 C52 28 55 22 60 20 Z" fill="url(#bciGradMain)"/>
+                    <path d="M60 20 C75 -2 95 10 70 35 C68 28 65 22 60 20 Z" fill="url(#bciGradMain)"/>
+                    <path d="M60 135 L60 100" stroke="url(#bciGradMain)" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M60 120 C45 100 40 85 55 80 C55 90 58 110 60 120 Z" fill="url(#bciGradMain)"/>
+                    <path d="M60 120 C75 100 80 85 65 80 C65 90 62 110 60 120 Z" fill="url(#bciGradMain)"/>
+                    <text x="60" y="78" font-family="Arial, sans-serif" font-weight="900" font-size="34" fill="url(#bciGradMain)" text-anchor="middle" letter-spacing="1">BCI</text>
+                </svg>
+            </div>
+
             <h1 class="text-3xl sm:text-4xl font-extrabold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-green-500 drop-shadow-[0_0_25px_rgba(16,185,129,0.35)]">
                 BCI Organic Hub
             </h1>

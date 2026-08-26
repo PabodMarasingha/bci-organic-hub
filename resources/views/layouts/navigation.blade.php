@@ -34,18 +34,32 @@
                     @endphp
 
                     <a href="{{ $homeRoute }}" class="flex items-center gap-3 group" title="Go to Dashboard">
-                        <!-- Custom Organic Hub Icon -->
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition duration-300">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        
+                        <!-- New Pure SVG Logo -->
+                        <div class="relative group-hover:scale-105 transition-transform duration-300">
+                            <svg viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 drop-shadow-[0_0_8px_rgba(16,185,129,0.4)] group-hover:drop-shadow-[0_0_12px_rgba(16,185,129,0.9)] transition-all duration-300">
+                                <defs>
+                                    <linearGradient id="navGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#34d399" />
+                                        <stop offset="100%" stop-color="#10b981" />
+                                    </linearGradient>
+                                </defs>
+                                <path d="M60 20 L20 30 L20 75 C20 105 45 125 60 135 C75 125 100 105 100 75 L100 30 Z" stroke="url(#navGrad)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M60 20 C45 5 30 15 50 35 C52 28 55 22 60 20 Z" fill="url(#navGrad)"/>
+                                <path d="M60 20 C75 -2 95 10 70 35 C68 28 65 22 60 20 Z" fill="url(#navGrad)"/>
+                                <path d="M60 135 L60 100" stroke="url(#navGrad)" stroke-width="4" stroke-linecap="round"/>
+                                <path d="M60 120 C45 100 40 85 55 80 C55 90 58 110 60 120 Z" fill="url(#navGrad)"/>
+                                <path d="M60 120 C75 100 80 85 65 80 C65 90 62 110 60 120 Z" fill="url(#navGrad)"/>
+                                <text x="60" y="78" font-family="Arial, sans-serif" font-weight="900" font-size="34" fill="url(#navGrad)" text-anchor="middle" letter-spacing="1">BCI</text>
                             </svg>
                         </div>
+
                         <!-- System Name -->
                         <div class="flex flex-col">
-                            <span class="text-base font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-green-400">
+                            <span class="text-base font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-green-400 group-hover:brightness-110 transition-all duration-300">
                                 BCI ORGANIC HUB
                             </span>
-                            <span class="text-[9px] uppercase tracking-widest text-slate-400 font-bold -mt-1">
+                            <span class="text-[9px] uppercase tracking-widest text-slate-400 font-bold -mt-1 group-hover:text-emerald-400/80 transition-colors duration-300">
                                 Healthy Food & Meals
                             </span>
                         </div>
