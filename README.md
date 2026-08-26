@@ -1,66 +1,91 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# BCI Organic Hub and Digital Fulfillment System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+BSIT 22063 – Group Software Project, BCI Campus (2026)
 
-## About Laravel
+A full-stack web platform that lets the BCI Campus community order organic salads, fresh juices, and portioned meals — with live customization, digital payments, and end-to-end delivery tracking from kitchen to doorstep.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Problem It Solves
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Campus food options are mostly processed, quick-fix choices with no way to customize for dietary needs, and no digital system for remote ordering or delivery. The Organic Hub replaces queueing and guesswork with a build-your-own ordering flow, real-time kitchen coordination, and zone-based delivery dispatch.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Core Features
 
-## Learning Laravel
+- **Customer**: browse the menu by category (salad, juice, bowl, wrap, smoothie), build a custom bowl from real ingredients, cart & checkout, order tracking, order reviews
+- **Kitchen Staff**: live order queue, mark orders preparing/ready, real-time ingredient stock toggle (in stock / out of stock)
+- **Delivery**: zone-based dispatch, driver assignment, pickup → delivered status flow, cash-on-delivery collection confirmation
+- **Admin**: revenue & profit overview, ingredient management, staff management, live order and driver assignment panel
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Tech Stack
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- **Backend**: Laravel 12 (PHP 8.2)
+- **Frontend**: Blade templates, Tailwind CSS
+- **Database**: MySQL (via XAMPP)
+- **Auth & Roles**: Laravel Breeze/Fortify + Spatie `laravel-permission`
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Getting Started
 
-## Laravel Sponsors
+### Prerequisites
+- XAMPP (PHP 8.2+, MySQL)
+- Composer
+- Node.js & npm
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Setup
 
-### Premium Partners
+```bash
+git clone https://github.com/PabodMarasingha/bci-organic-hub.git
+cd bci-organic-hub
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+composer install
+npm install
 
-## Contributing
+cp .env.example .env
+php artisan key:generate
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Configure your database credentials in `.env`, then:
 
-## Code of Conduct
+```bash
+php artisan migrate
+php artisan db:seed
+php artisan storage:link
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+npm run build
+php artisan serve
+```
 
-## Security Vulnerabilities
+Visit `http://127.0.0.1:8000`.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Test Accounts
 
-## License
+Seeded automatically via `php artisan db:seed`:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| Role | Email | Password |
+|---|---|---|
+| Admin | admin@bci.test | password |
+| Kitchen Staff | kitchen@bci.test | password |
+| Delivery Driver | driver1@example.com | password |
+| Delivery Staff | delivery@bci.test | password |
+| Customer | customer1@example.com | password |
+
+New sign-ups through the registration page default to the **customer** role.
+
+## Project Structure Notes
+
+- Menu items are managed through the `ProductItem` model (`product_items` table) — this is what the customer-facing Menu page queries.
+- Role and permission logic uses Spatie's `laravel-permission` package (`roles`, `permissions`, `model_has_roles` tables).
+- Delivery zone/driver/order test data is seeded via `DeliveryTestingSeeder`.
+
+## Team
+
+| Name | Role | Function |
+|---|---|---|
+| Chethisha Pabod | Team Leader | Backend development, system integration, bug fixes & debugging |
+| Thilina Sandaruwan | Member | Frontend design & UI |
+| Sithum Kawshika | Member | Documentation & QA (testing) |
+| Imanya Rajapaksha | Member | Database design |
+
+<!-- Add Student IDs for each member here -->
+
+## Course
+
+BSIT 22063 – Group Software Project, BCI Campus, 2026

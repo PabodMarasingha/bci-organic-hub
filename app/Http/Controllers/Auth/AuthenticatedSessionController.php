@@ -9,56 +9,47 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Route;
 
 class AuthenticatedSessionController extends Controller
 {
-    
     public function create(): View
     {
         return view('auth.login');
     }
 
-    
+    /**
+     * Handle an incoming authentication request.
+     */
     public function store(LoginRequest $request): RedirectResponse
     {
-        // 1. Request Validation
-        $request->validate([
-            'role' => ['required', 'string'],
-        ]);
-
         $request->authenticate();
+
+        $request->session()->regenerate();
 
         /** @var User $user */
         $user = Auth::user();
 
-       
-        $selectedRole = strtolower(trim($request->role));
-        
-        
+        $selectedRole = strtolower(trim($request->role ?? ''));
         $dbRole = strtolower($user->role ?? '');
         $userSpatieRoles = method_exists($user, 'getRoleNames') 
             ? $user->getRoleNames()->map(fn($r) => strtolower($r))->toArray() 
             : [];
 
-        
         $hasMatchingRole = false;
 
-       
-        if (in_array($selectedRole, $userSpatieRoles) || $dbRole === $selectedRole) {
+        if (empty($selectedRole) || in_array($selectedRole, $userSpatieRoles) || $dbRole === $selectedRole) {
             $hasMatchingRole = true;
         } 
-        
         elseif (in_array($selectedRole, ['delivery', 'delivery staff']) && 
                (array_intersect(['delivery', 'delivery staff'], $userSpatieRoles) || in_array($dbRole, ['delivery', 'delivery staff']))) {
             $hasMatchingRole = true;
         } 
-        
         elseif (in_array($selectedRole, ['kitchen', 'staff']) && 
                (array_intersect(['kitchen', 'staff'], $userSpatieRoles) || in_array($dbRole, ['kitchen', 'staff']))) {
             $hasMatchingRole = true;
         }
 
-        
         if (!$hasMatchingRole) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();
@@ -69,27 +60,21 @@ class AuthenticatedSessionController extends Controller
             ])->onlyInput('email');
         }
 
-        
-        $request->session()->regenerate();
-
-       
         if ($user->hasRole('admin') || $dbRole === 'admin') {
-            return redirect()->route('admin.dashboard');
+            return redirect()->intended(Route::has('admin.dashboard') ? route('admin.dashboard') : route('dashboard'));
         }
 
         if ($user->hasRole('kitchen') || $user->hasRole('staff') || in_array($dbRole, ['kitchen', 'staff'])) {
-            return redirect()->route('staff.dashboard');
+            return redirect()->intended(Route::has('staff.dashboard') ? route('staff.dashboard') : route('dashboard'));
         }
 
         if ($user->hasRole('delivery') || $user->hasRole('Delivery Staff') || in_array($dbRole, ['delivery', 'delivery staff'])) {
-            return redirect()->route('delivery.dashboard');
+            return redirect()->intended(Route::has('delivery.dashboard') ? route('delivery.dashboard') : route('dashboard'));
         }
 
-        
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
-    
     public function destroy(Request $request): RedirectResponse
     {
         Auth::guard('web')->logout();

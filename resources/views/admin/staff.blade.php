@@ -33,7 +33,7 @@
             <div class="p-6 rounded-2xl bg-[#0c121e] border border-slate-800/80 shadow-xl">
                 <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
-                    Register New Staff / User Account
+                    Register New Staff Account
                 </h3>
                 <form method="POST" action="{{ route('admin.staff.store') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     @csrf
@@ -60,11 +60,9 @@
                     <div class="md:col-span-4">
                         <label class="block text-xs text-slate-400 mb-1 font-semibold">System Role</label>
                         <select name="role" x-model="createRole" class="w-full bg-[#121a29] border border-slate-700/60 rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-teal-500 uppercase" required>
-                            <!-- KITCHEN STAFF ඇතුළුව ස්ථිරවම Roles ලබා දී ඇත -->
-                            <option value="customer">CUSTOMER</option>
-                            <option value="staff">KITCHEN STAFF</option>
-                            <option value="delivery">DELIVERY</option>
-                            <option value="admin">ADMIN</option>
+@foreach($roles->where('name', '!=', 'customer') as $role)
+    <option value="{{ $role->name }}">{{ strtoupper($role->name) }}</option>
+@endforeach
                         </select>
                     </div>
 
@@ -221,11 +219,9 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Role</label>
                         <select name="role" x-model="editUser.role" class="w-full bg-[#121a29] border border-slate-700/60 rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-teal-500 uppercase" required>
-                            <!-- Edit Modal එකටත් ස්ථිරවම Roles ලබා දී ඇත -->
-                            <option value="customer">CUSTOMER</option>
-                            <option value="staff">KITCHEN STAFF</option>
-                            <option value="delivery">DELIVERY</option>
-                            <option value="admin">ADMIN</option>
+@foreach($roles->where('name', '!=', 'customer') as $role)
+    <option value="{{ $role->name }}">{{ strtoupper($role->name) }}</option>
+@endforeach
                         </select>
                     </div>
 
