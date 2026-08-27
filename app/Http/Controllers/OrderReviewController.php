@@ -64,11 +64,11 @@ class OrderReviewController extends Controller
         $finalDeliveryRating = $validated['delivery_rating'] ?? $validated['rating'] ?? 5;
 
         DB::transaction(function () use ($validated, $order, $finalFoodRating, $finalDeliveryRating) {
-           
+            
             Review::create([
                 'customer_order_id' => $order->id,
                 'user_id'           => Auth::id(),
-                'rating'            => $finalFoodRating, 
+                // 'rating'       => $finalFoodRating, <--- REMOVE THIS LINE
                 'food_rating'       => $finalFoodRating,
                 'delivery_rating'   => $finalDeliveryRating,
                 'comment'           => $validated['comment'] ?? null,

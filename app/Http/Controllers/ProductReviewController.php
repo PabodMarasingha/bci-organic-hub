@@ -16,17 +16,17 @@ class ProductReviewController extends Controller
             'feedback_text' => 'nullable|string|max:1000',
         ]);
 
-        
+        // Use food_rating instead of rating
         $product->reviews()->updateOrCreate(
             ['user_id' => Auth::id()],
             [
-                'rating' => $validated['rating'], 
+                'food_rating' => $validated['rating'], 
                 'comment' => $validated['feedback_text'],
             ]
         );
 
-        
-        $averageRating = $product->reviews()->avg('rating'); 
+        // Calculate average using food_rating
+        $averageRating = $product->reviews()->avg('food_rating'); 
         $reviewCount = $product->reviews()->count();
 
         $product->update([
