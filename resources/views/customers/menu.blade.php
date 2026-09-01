@@ -1,6 +1,8 @@
 <x-app-layout>
-    <div class="min-h-screen bg-organic-cream dark:bg-organic-charcoal text-organic-charcoal dark:text-organic-cream py-10 px-4 sm:px-6 lg:px-8 transition-colors duration-300 selection:bg-organic-gold selection:text-organic-charcoal">
+    <!-- Change bg-organic-cream to match your standard dashboard background class -->
+    <div class="min-h-screen bg-[#07090e] text-slate-100 py-10 px-4 sm:px-6 lg:px-8 transition-colors duration-300 selection:bg-organic-gold selection:text-organic-charcoal">
         <div class="max-w-7xl mx-auto space-y-10">
+            <!-- Rest of your code remains untouched -->
 
             <!-- Hero & Header Banner -->
             <div class="relative overflow-hidden bg-organic-green dark:bg-organic-green-light p-8 sm:p-10 rounded-3xl shadow-xl">
